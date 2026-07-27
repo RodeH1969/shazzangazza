@@ -352,17 +352,16 @@
 
   .fuse{
     display:flex;
-    align-items:center;
-    justify-content:space-between;
-    gap:8px;
+    flex-direction:column;
+    gap:4px;
     padding:9px 16px 13px;
     border-top: 1px solid var(--line);
     font-family:'JetBrains Mono', monospace;
-    font-size:11.5px;
-    letter-spacing:0.03em;
+    font-size:11px;
+    letter-spacing:0.02em;
   }
   .fuse-label{ color: var(--gold); font-weight:600; }
-  .fuse-time{ color: var(--text); font-weight:600; }
+  .fuse-time{ color: var(--text); font-weight:700; }
   .fuse-dead{
     color: var(--shazza);
     font-weight:700;
@@ -462,9 +461,29 @@
     letter-spacing:0.04em;
     pointer-events:none;
   }
+  .lb-bottom-strips{
+    position:absolute; left:0; right:0; bottom:0;
+    display:flex;
+    flex-direction:column;
+  }
   .lb-location{
+    position:static;
     padding-left:12px;
     font-size:12px;
+  }
+  .answer-strip{
+    background:#c81e3a;
+    color:#ffffff;
+    font-weight:800;
+    text-align:center;
+    padding:9px 12px;
+    font-family:'Bebas Neue', sans-serif;
+    font-size:20px;
+    letter-spacing:0.04em;
+    text-transform:uppercase;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
   }
   .lb-badge-row{ display:flex; align-items:center; gap:10px; }
   .lb-actions{
@@ -668,8 +687,8 @@
 
 <div class="ticker-banner">
   <div class="ticker-track">
-    <span class="ticker-item">Shazza n Gazza brought to you by RCH &middot; Qld's No 1 Strata Managers.</span>
-    <span class="ticker-item">Shazza n Gazza brought to you by RCH &middot; Qld's No 1 Strata Managers.</span>
+    <span class="ticker-item">Shazza n Gazza brought to you by SSKB &middot; Qld's No 1 Strata Managers.</span>
+    <span class="ticker-item">Shazza n Gazza brought to you by SSKB &middot; Qld's No 1 Strata Managers.</span>
   </div>
 </div>
 
@@ -693,7 +712,10 @@
     <div class="lb-stage" id="lbStage">
       <img id="lbImage" src="" alt="Crowd photo, zoom in to spot the masked face">
       <div class="lb-hint">Scroll or pinch to zoom &middot; drag to pan</div>
-      <div class="location-strip lb-location" id="lbLocation" style="display:none;"></div>
+      <div class="lb-bottom-strips">
+        <div class="answer-strip" id="lbAnswer" style="display:none;"></div>
+        <div class="location-strip lb-location" id="lbLocation" style="display:none;"></div>
+      </div>
     </div>
     <div class="lb-actions">
       <button class="btn btn-primary" id="thatsMeBtn">
@@ -731,11 +753,18 @@
       <input type="tel" id="mobileInput" placeholder="04XX XXX XXX" inputmode="tel">
     </div>
 
-    <div class="modal-actions">
-      <button class="btn btn-secondary" id="cancelClaim">Cancel</button>
-      <button class="btn btn-primary" id="submitClaim">Submit Claim</button>
+    <div class="field">
+      <label>Your name (published if you win)</label>
+      <div style="display:flex; gap:8px;">
+        <input type="text" id="firstNameInput" placeholder="First name" style="flex:2;">
+        <input type="text" id="surnameInitialInput" placeholder="Surname initial" maxlength="1" style="flex:1; text-transform:uppercase;">
+      </div>
     </div>
-    <p class="fine-print">Our admin checks your answer before confirming a winner. If it checks out, we&rsquo;ll text the number above.</p>
+
+    <div class="modal-actions">
+      <button class="btn btn-primary" id="submitClaim" style="width:100%;">Submit Claim</button>
+    </div>
+    <p class="fine-print">Our admin checks your answer before confirming a winner. If you're right, your first name and surname initial (e.g. Roderick H) get published as the winner &mdash; your mobile number never does. We'll text the number above if it checks out.</p>
   </div>
 </div>
 
@@ -829,9 +858,9 @@
         if(fuseEl){
           const remaining = p.fuseDeadline.getTime() - Date.now();
           if(remaining <= 0){
-            fuseEl.innerHTML = `<span class="fuse-dead">\u{1F4A5} TOO LATE &mdash; the fuse burned out</span>`;
+            fuseEl.innerHTML = `<span class="fuse-dead">\u{1F4A5} TOO LATE &mdash; nobody cracked it in time</span>`;
           } else {
-            fuseEl.innerHTML = `<span class="fuse-label">\u{1F4A3} Fuse Lit</span><span class="fuse-time">${fmtHMS(remaining)} remaining</span>`;
+            fuseEl.innerHTML = `<span class="fuse-label">\u{1F575}\u{FE0F} Nobody&rsquo;s cracked it yet</span><span class="fuse-time">\u{1F4A3} ${fmtHMS(remaining)} left to claim</span>`;
           }
         }
         if(!p.claimed){
@@ -906,6 +935,16 @@
     } else {
       lbLocation.style.display = 'none';
     }
+    const lbAnswer = document.getElementById('lbAnswer');
+    if(showReveal && currentPhoto.answer_name){
+      const winnerBit = currentPhoto.winner_name
+        ? `<div style="font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:600; letter-spacing:0.02em; text-transform:none; margin-top:2px;">\u{1F3C6} Won by ${currentPhoto.winner_name}${currentPhoto.claimed_at ? ' &middot; ' + claimedTimeLabel(currentPhoto.claimed_at) : ''}</div>`
+        : '';
+      lbAnswer.innerHTML = `${currentPhoto.answer_name}${winnerBit}`;
+      lbAnswer.style.display = 'block';
+    } else {
+      lbAnswer.style.display = 'none';
+    }
     lightbox.classList.add('open');
     document.body.style.overflow = 'hidden';
     if(pz){ pz.dispose(); pz = null; }
@@ -950,6 +989,8 @@
   const submitClaimBtn = document.getElementById('submitClaim');
   const mobileInput = document.getElementById('mobileInput');
   const personNameInput = document.getElementById('personNameInput');
+  const firstNameInput = document.getElementById('firstNameInput');
+  const surnameInitialInput = document.getElementById('surnameInitialInput');
 
   function openClaimModal(){
     closeLightbox();
@@ -961,12 +1002,13 @@
 
   document.getElementById('thatsMeBtn').addEventListener('click', openClaimModal);
   document.getElementById('closeClaim').addEventListener('click', closeClaimModal);
-  document.getElementById('cancelClaim').addEventListener('click', closeClaimModal);
   claimModal.addEventListener('click', e => { if(e.target === claimModal) closeClaimModal(); });
 
   function resetClaimForm(){
     personNameInput.value = '';
     mobileInput.value = '';
+    firstNameInput.value = '';
+    surnameInitialInput.value = '';
     submitClaimBtn.disabled = false;
     submitClaimBtn.textContent = 'Submit Claim';
   }
@@ -974,9 +1016,15 @@
   submitClaimBtn.addEventListener('click', async () => {
     const personName = personNameInput.value.trim();
     const mobile = mobileInput.value.trim();
+    const firstName = firstNameInput.value.trim();
+    const surnameInitial = surnameInitialInput.value.trim();
     if(!personName){ showToast('Type in who you think it is.'); personNameInput.focus(); return; }
     if(!mobile){ showToast('Pop in your mobile number.'); mobileInput.focus(); return; }
+    if(!firstName){ showToast('Pop in your first name.'); firstNameInput.focus(); return; }
+    if(!surnameInitial){ showToast('Pop in your surname initial.'); surnameInitialInput.focus(); return; }
     if(!sb){ showToast('Backend not connected — try again shortly.'); return; }
+
+    const claimantName = `${firstName} ${surnameInitial.toUpperCase()}`;
 
     submitClaimBtn.disabled = true;
     submitClaimBtn.textContent = 'Sending…';
@@ -987,6 +1035,7 @@
         mask_type: currentPhoto.mask_type,
         mobile_number: mobile,
         person_name: personName,
+        claimant_name: claimantName,
         status: 'pending'
       });
       if(insertError) throw insertError;

@@ -195,6 +195,10 @@
             <label for="locationInput">Location</label>
             <input type="text" id="locationInput" placeholder="e.g. New Farm Parkrun">
           </div>
+          <div class="field">
+            <label for="answerNameInput">Correct answer (real name)</label>
+            <input type="text" id="answerNameInput" placeholder="e.g. Michael Klim">
+          </div>
           <button class="btn btn-primary" id="uploadPhotoBtn">Upload</button>
         </div>
       </div>
@@ -322,13 +326,14 @@
         <div class="claim-info">
           <div class="row"><b>${spotto ? 'Spotto ' + spotto.num : 'Unknown Spotto'}</b> &middot; <span class="badge ${claim.mask_type}">${claim.mask_type}</span></div>
           <div class="row">They say it's: <b>${claim.person_name || '(no name given)'}</b></div>
+          <div class="row">Claimant: <b>${claim.claimant_name || '(no name given)'}</b></div>
           <div class="row">Mobile: <b>${claim.mobile_number}</b></div>
           <div class="row">Submitted: <b>${fmtTime(claim.created_at)}</b></div>
           <div class="row">Status: <b>${claim.status}</b></div>
           <div class="claim-actions">
             <button class="btn btn-secondary compare-btn" data-original="${spotto ? spotto.originalPath || '' : ''}">View Original</button>
             ${claim.status === 'pending' ? `
-              <button class="btn btn-primary approve-btn" data-id="${claim.id}" data-photo="${claim.photo_id}" data-type="${claim.mask_type}">Approve</button>
+              <button class="btn btn-primary approve-btn" data-id="${claim.id}" data-photo="${claim.photo_id}" data-name="${(claim.claimant_name || '').replace(/"/g,'&quot;')}">Approve</button>
               <button class="btn btn-danger reject-btn" data-id="${claim.id}">Reject</button>` : ''}
           </div>
         </div>`;
@@ -336,7 +341,7 @@
     }
 
     list.querySelectorAll('.approve-btn').forEach(btn => {
-      btn.addEventListener('click', () => approveClaim(btn.dataset.id, btn.dataset.photo));
+      btn.addEventListener('click', () => approveClaim(btn.dataset.id, btn.dataset.photo, btn.dataset.name));
     });
     list.querySelectorAll('.reject-btn').forEach(btn => {
       btn.addEventListener('click', () => rejectClaim(btn.dataset.id));
@@ -411,11 +416,11 @@
   zoomLightbox.addEventListener('click', e => { if(e.target === zoomLightbox) closeZoomLightbox(); });
   document.addEventListener('keydown', e => { if(e.key === 'Escape') closeZoomLightbox(); });
 
-  async function approveClaim(claimId, photoId){
-    if(!confirm('Approve this claim? This puts the claimed sash up on the live site.')) return;
+  async function approveClaim(claimId, photoId, claimantName){
+    if(!confirm('Approve this claim? This puts the claimed sash up on the live site and publishes the winner name.')) return;
     const now = new Date().toISOString();
     const { error: e1 } = await sb.from('claims').update({ status: 'approved' }).eq('id', claimId);
-    const { error: e2 } = await sb.from('photos').update({ claimed: true, claimed_at: now }).eq('id', photoId);
+    const { error: e2 } = await sb.from('photos').update({ claimed: true, claimed_at: now, winner_name: claimantName || null }).eq('id', photoId);
     if(e1 || e2){ alert('Something went wrong approving that — try again.'); return; }
     loadClaims();
     loadPhotos();
@@ -479,10 +484,12 @@
     const originalInput = document.getElementById('originalFileInput');
     const maskType = document.getElementById('maskTypeSelect').value;
     const location = document.getElementById('locationInput').value.trim();
+    const answerName = document.getElementById('answerNameInput').value.trim();
     const file = fileInput.files[0];
     const originalFile = originalInput.files[0];
     if(!file){ alert('Choose the public photo first.'); return; }
     if(!originalFile){ alert('Choose the original (unmasked) photo too — you\'ll need it to check claims.'); return; }
+    if(!answerName){ alert('Enter the correct answer (the real name) for this Spotto.'); return; }
 
     const stamp = `${Date.now()}-${Math.random().toString(36).slice(2,8)}`;
     const fileName = `photo-${stamp}.jpg`;
@@ -499,6 +506,7 @@
       original_path: originalName,
       mask_type: maskType,
       location: location || null,
+      answer_name: answerName,
       claimed: false,
       is_active: true
     });
@@ -507,6 +515,7 @@
     fileInput.value = '';
     originalInput.value = '';
     document.getElementById('locationInput').value = '';
+    document.getElementById('answerNameInput').value = '';
     loadPhotos();
   });
 </script>
