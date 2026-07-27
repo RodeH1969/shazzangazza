@@ -529,36 +529,8 @@
     color: var(--muted);
     margin-bottom:8px;
   }
-  .camera-box{
-    position:relative;
-    border-radius:10px;
-    overflow:hidden;
-    background:#000;
-    aspect-ratio: 4/3;
-    border:1.5px solid var(--line-strong);
-  }
-  .camera-box video, .camera-box img{
-    width:100%; height:100%;
-    object-fit:cover;
-    display:block;
-    transform: scaleX(-1); /* mirror so it feels like a mirror, not a spy cam */
-  }
-  .camera-error{
-    position:absolute; inset:0;
-    display:flex; align-items:center; justify-content:center;
-    text-align:center;
-    padding:20px;
-    color: var(--muted);
-    font-size:13px;
-    background: var(--surface-2);
-  }
-  .camera-actions{
-    display:flex; gap:10px;
-    margin-top:12px;
-  }
-  .camera-actions .btn{ flex:1; justify-content:center; }
 
-  input[type=tel]{
+  input[type=tel], input[type=text]{
     width:100%;
     background: var(--bg-2);
     border:1px solid var(--line-strong);
@@ -568,8 +540,8 @@
     font-size:14px;
     font-family:'JetBrains Mono', monospace;
   }
-  input[type=tel]::placeholder{ color: var(--muted-2); }
-  input[type=tel]:focus{ outline:none; border-color: var(--gold-dim); }
+  input[type=tel]::placeholder, input[type=text]::placeholder{ color: var(--muted-2); }
+  input[type=tel]:focus, input[type=text]:focus{ outline:none; border-color: var(--gold-dim); }
 
   .modal-actions{ margin-top:24px; display:flex; gap:10px; }
   .fine-print{
@@ -683,7 +655,7 @@
 
 <section class="hero">
   <h1>
-    <div class="hero-line">Is it <span class="accent">you</span> under</div>
+    <div class="hero-line">Know <span class="accent">who</span> is under</div>
     <div class="hero-line"><img class="headline-mask mask-shazza" src="shazza.png" alt="Shazza" width="56" height="56"> or <img class="headline-mask mask-gazza" src="gazza.png" alt="Gazza" width="56" height="56"> ?</div>
   </h1>
   <p>Yes? Claim your prize.</p>
@@ -726,7 +698,7 @@
     <div class="lb-actions">
       <button class="btn btn-primary" id="thatsMeBtn">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
-        That&rsquo;s Me &mdash; Claim It
+        I Know Who It Is
       </button>
       <button class="btn btn-secondary" id="shareBtn">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5 15.4 17.5M15.4 6.5 8.6 10.5"/></svg>
@@ -742,7 +714,7 @@
     <div class="modal-head">
       <div>
         <h2>Claim This Spotto</h2>
-        <p class="modal-sub">Snap a quick selfie and pop in your mobile. Our admin checks it against the original photo &mdash; no automated matching, an actual human looks at it.</p>
+        <p class="modal-sub">Reckon you know who's under the mask? Type their name and pop in your mobile &mdash; our admin checks it before anyone's declared a winner.</p>
       </div>
       <button class="icon-btn" id="closeClaim" aria-label="Close">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
@@ -750,22 +722,8 @@
     </div>
 
     <div class="field">
-      <label>Your selfie &mdash; camera only</label>
-      <div class="camera-box" id="cameraBox">
-        <video id="cameraVideo" autoplay playsinline muted></video>
-        <canvas id="cameraCanvas" style="display:none;"></canvas>
-        <img id="selfiePreview" style="display:none;" alt="Your captured selfie">
-        <div class="camera-error" id="cameraError" style="display:none;">
-          Camera access needed to claim &mdash; check your browser permissions and reload.
-        </div>
-      </div>
-      <div class="camera-actions">
-        <button type="button" class="btn btn-secondary" id="retakeBtn" style="display:none;">Retake</button>
-        <button type="button" class="btn btn-primary" id="captureBtn">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2Z"/><circle cx="12" cy="13" r="4"/></svg>
-          Take Selfie
-        </button>
-      </div>
+      <label for="personNameInput">Who is it?</label>
+      <input type="text" id="personNameInput" placeholder="Full name">
     </div>
 
     <div class="field">
@@ -775,9 +733,9 @@
 
     <div class="modal-actions">
       <button class="btn btn-secondary" id="cancelClaim">Cancel</button>
-      <button class="btn btn-primary" id="submitClaim" disabled>Submit Claim</button>
+      <button class="btn btn-primary" id="submitClaim">Submit Claim</button>
     </div>
-    <p class="fine-print">Live camera only &mdash; no uploading photos of someone else. Your selfie is only used to verify your claim and is never shown publicly. If it checks out, we&rsquo;ll text the number above.</p>
+    <p class="fine-print">Our admin checks your answer before confirming a winner. If it checks out, we&rsquo;ll text the number above.</p>
   </div>
 </div>
 
@@ -804,8 +762,8 @@
 
 <script>
   // ---- Supabase ----
-  const SUPABASE_URL = 'https://ihhktqghdsiqmsjvzcnn.supabase.co';
-  const SUPABASE_KEY = 'sb_publishable_-gLigJKFMHW-OuIjOLw72w_lM0G5elo';
+  const SUPABASE_URL = 'https://fqxjjzzrfkzkebghrqvy.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_aIbOvtjJr4lGryUvze7-lg_OAs3W_gm';
   const sb = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
 
   const icons = {
@@ -987,72 +945,18 @@
     }
   });
 
-  // ---- Claim modal: live camera only ----
+  // ---- Claim modal: name the person ----
   const claimModal = document.getElementById('claimModal');
-  const cameraVideo = document.getElementById('cameraVideo');
-  const cameraCanvas = document.getElementById('cameraCanvas');
-  const selfiePreview = document.getElementById('selfiePreview');
-  const cameraError = document.getElementById('cameraError');
-  const captureBtn = document.getElementById('captureBtn');
-  const retakeBtn = document.getElementById('retakeBtn');
   const submitClaimBtn = document.getElementById('submitClaim');
   const mobileInput = document.getElementById('mobileInput');
-
-  let mediaStream = null;
-  let capturedBlob = null;
-
-  async function startCamera(){
-    capturedBlob = null;
-    submitClaimBtn.disabled = true;
-    selfiePreview.style.display = 'none';
-    cameraError.style.display = 'none';
-    captureBtn.style.display = 'inline-flex';
-    retakeBtn.style.display = 'none';
-    try{
-      mediaStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false });
-      cameraVideo.srcObject = mediaStream;
-      cameraVideo.style.display = 'block';
-    }catch(err){
-      console.error('Camera error:', err);
-      cameraVideo.style.display = 'none';
-      cameraError.style.display = 'flex';
-    }
-  }
-
-  function stopCamera(){
-    if(mediaStream){
-      mediaStream.getTracks().forEach(t => t.stop());
-      mediaStream = null;
-    }
-  }
-
-  captureBtn.addEventListener('click', () => {
-    if(!cameraVideo.videoWidth) return;
-    cameraCanvas.width = cameraVideo.videoWidth;
-    cameraCanvas.height = cameraVideo.videoHeight;
-    cameraCanvas.getContext('2d').drawImage(cameraVideo, 0, 0, cameraCanvas.width, cameraCanvas.height);
-    cameraCanvas.toBlob(blob => {
-      capturedBlob = blob;
-      selfiePreview.src = URL.createObjectURL(blob);
-      selfiePreview.style.display = 'block';
-      cameraVideo.style.display = 'none';
-      captureBtn.style.display = 'none';
-      retakeBtn.style.display = 'inline-flex';
-      submitClaimBtn.disabled = false;
-      stopCamera();
-    }, 'image/jpeg', 0.9);
-  });
-
-  retakeBtn.addEventListener('click', startCamera);
+  const personNameInput = document.getElementById('personNameInput');
 
   function openClaimModal(){
     closeLightbox();
     claimModal.classList.add('open');
-    startCamera();
   }
   function closeClaimModal(){
     claimModal.classList.remove('open');
-    stopCamera();
   }
 
   document.getElementById('thatsMeBtn').addEventListener('click', openClaimModal);
@@ -1061,15 +965,16 @@
   claimModal.addEventListener('click', e => { if(e.target === claimModal) closeClaimModal(); });
 
   function resetClaimForm(){
-    capturedBlob = null;
+    personNameInput.value = '';
     mobileInput.value = '';
-    submitClaimBtn.disabled = true;
+    submitClaimBtn.disabled = false;
     submitClaimBtn.textContent = 'Submit Claim';
   }
 
   submitClaimBtn.addEventListener('click', async () => {
+    const personName = personNameInput.value.trim();
     const mobile = mobileInput.value.trim();
-    if(!capturedBlob){ showToast('Take a selfie first.'); return; }
+    if(!personName){ showToast('Type in who you think it is.'); personNameInput.focus(); return; }
     if(!mobile){ showToast('Pop in your mobile number.'); mobileInput.focus(); return; }
     if(!sb){ showToast('Backend not connected — try again shortly.'); return; }
 
@@ -1077,15 +982,11 @@
     submitClaimBtn.textContent = 'Sending…';
 
     try{
-      const fileName = `claim-${Date.now()}-${Math.random().toString(36).slice(2,8)}.jpg`;
-      const { error: uploadError } = await sb.storage.from('selfies').upload(fileName, capturedBlob, { contentType: 'image/jpeg' });
-      if(uploadError) throw uploadError;
-
       const { error: insertError } = await sb.from('claims').insert({
         photo_id: currentPhoto.id,
         mask_type: currentPhoto.mask_type,
         mobile_number: mobile,
-        selfie_path: fileName,
+        person_name: personName,
         status: 'pending'
       });
       if(insertError) throw insertError;
@@ -1104,7 +1005,7 @@
   // ---- Share (demo) ----
   document.getElementById('shareBtn').addEventListener('click', async () => {
     const url = `${location.href.split('#')[0]}#spotto-${currentSpottoNum}`;
-    const shareText = `Is this you? Check out Spotto ${currentSpottoNum} on Shazza & Gazza! \u{1F60A}`;
+    const shareText = `Reckon you know who this is? Check out Spotto ${currentSpottoNum} on Shazza & Gazza! \u{1F60A}`;
     if(navigator.share){
       try{ await navigator.share({ title: 'Shazza and Gazza', text: shareText, url }); }
       catch(e){ /* user cancelled */ }

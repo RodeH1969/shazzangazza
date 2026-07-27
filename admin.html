@@ -174,7 +174,7 @@
     <div class="tab-panel" id="photosPanel">
       <div class="card upload-card">
         <h3 style="margin-bottom:14px;">Add today's photo</h3>
-        <p style="color:var(--muted); font-size:12px; margin-bottom:14px;">Upload both: the public photo (as players will see it) and the real, unmasked photo you'll compare selfies against. The original stays private &mdash; only you can see it.</p>
+        <p style="color:var(--muted); font-size:12px; margin-bottom:14px;">Upload both: the public photo (as players will see it) and the real, unmasked photo. The original stays private &mdash; only you can see it, to check whether a claimed name is right.</p>
         <div class="upload-row">
           <div class="field">
             <label for="photoFileInput">Public photo</label>
@@ -211,29 +211,20 @@
 </div>
 
 <div id="compareModal" style="display:none; position:fixed; inset:0; background:rgba(8,9,13,0.9); z-index:100; align-items:center; justify-content:center; padding:20px;">
-  <div style="background:var(--surface); border:1px solid var(--line-strong); border-radius:12px; max-width:700px; width:100%; padding:20px; max-height:90vh; overflow-y:auto;">
+  <div style="background:var(--surface); border:1px solid var(--line-strong); border-radius:12px; max-width:500px; width:100%; padding:20px; max-height:90vh; overflow-y:auto;">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-      <h3 class="display" style="font-size:22px; color:var(--gold);">COMPARE FACES</h3>
+      <h3 class="display" style="font-size:22px; color:var(--gold);">ORIGINAL PHOTO</h3>
       <button class="btn btn-secondary" id="closeCompare">Close</button>
     </div>
-    <p id="compareNoOriginal" style="display:none; color:var(--muted); font-size:13px; margin-bottom:14px;">No original photo was saved for this Spotto — nothing to compare against.</p>
-    <div style="display:flex; gap:16px; flex-wrap:wrap;">
-      <div style="flex:1; min-width:240px;">
-        <p class="mono" style="font-size:11px; color:var(--muted); margin-bottom:6px;">REAL FACE (ORIGINAL)</p>
-        <img id="compareOriginal" class="zoomable" src="" alt="Original photo" style="width:100%; border-radius:8px; border:1px solid var(--line-strong); cursor:zoom-in;">
-        <a id="compareDownload" href="" download target="_blank" class="btn btn-secondary" style="display:inline-block; margin-top:10px; text-decoration:none; text-align:center; width:100%;">Save Original</a>
-      </div>
-      <div style="flex:1; min-width:240px;">
-        <p class="mono" style="font-size:11px; color:var(--muted); margin-bottom:6px;">THEIR SELFIE</p>
-        <img id="compareSelfie" class="zoomable" src="" alt="Their selfie" style="width:100%; border-radius:8px; border:1px solid var(--line-strong); cursor:zoom-in;">
-      </div>
-    </div>
+    <p id="compareNoOriginal" style="display:none; color:var(--muted); font-size:13px; margin-bottom:14px;">No original photo was saved for this Spotto.</p>
+    <img id="compareOriginal" class="zoomable" src="" alt="Original photo" style="width:100%; border-radius:8px; border:1px solid var(--line-strong); cursor:zoom-in;">
+    <a id="compareDownload" href="" download target="_blank" class="btn btn-secondary" style="display:inline-block; margin-top:10px; text-decoration:none; text-align:center; width:100%;">Save Original</a>
   </div>
 </div>
 
 <script>
-  const SUPABASE_URL = 'https://ihhktqghdsiqmsjvzcnn.supabase.co';
-  const SUPABASE_KEY = 'sb_publishable_-gLigJKFMHW-OuIjOLw72w_lM0G5elo';
+  const SUPABASE_URL = 'https://fqxjjzzrfkzkebghrqvy.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_aIbOvtjJr4lGryUvze7-lg_OAs3W_gm';
   const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
   const loginScreen = document.getElementById('loginScreen');
@@ -321,23 +312,21 @@
 
     list.innerHTML = '';
     for(const claim of data){
-      const { data: signed } = await sb.storage.from('selfies').createSignedUrl(claim.selfie_path, 3600);
-      const selfieUrl = signed ? signed.signedUrl : '';
       const spotto = photoMap[claim.photo_id];
       const card = document.createElement('div');
       card.className = 'card claim-card';
       card.innerHTML = `
         <div style="display:flex; gap:8px; flex-shrink:0;">
           ${spotto ? `<img class="claim-selfie zoomable" src="${spotto.url}" alt="Spotto photo" loading="lazy" title="Spotto ${spotto.num}">` : `<div class="claim-selfie" style="display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--muted);text-align:center;padding:4px;">Spotto not found</div>`}
-          <img class="claim-selfie zoomable" src="${selfieUrl}" alt="Selfie" loading="lazy" title="Their selfie">
         </div>
         <div class="claim-info">
           <div class="row"><b>${spotto ? 'Spotto ' + spotto.num : 'Unknown Spotto'}</b> &middot; <span class="badge ${claim.mask_type}">${claim.mask_type}</span></div>
+          <div class="row">They say it's: <b>${claim.person_name || '(no name given)'}</b></div>
           <div class="row">Mobile: <b>${claim.mobile_number}</b></div>
           <div class="row">Submitted: <b>${fmtTime(claim.created_at)}</b></div>
           <div class="row">Status: <b>${claim.status}</b></div>
           <div class="claim-actions">
-            <button class="btn btn-secondary compare-btn" data-selfie="${selfieUrl}" data-original="${spotto ? spotto.originalPath || '' : ''}">Compare Faces</button>
+            <button class="btn btn-secondary compare-btn" data-original="${spotto ? spotto.originalPath || '' : ''}">View Original</button>
             ${claim.status === 'pending' ? `
               <button class="btn btn-primary approve-btn" data-id="${claim.id}" data-photo="${claim.photo_id}" data-type="${claim.mask_type}">Approve</button>
               <button class="btn btn-danger reject-btn" data-id="${claim.id}">Reject</button>` : ''}
@@ -353,19 +342,17 @@
       btn.addEventListener('click', () => rejectClaim(btn.dataset.id));
     });
     list.querySelectorAll('.compare-btn').forEach(btn => {
-      btn.addEventListener('click', () => openCompare(btn.dataset.original, btn.dataset.selfie));
+      btn.addEventListener('click', () => openCompare(btn.dataset.original));
     });
   }
 
   // ---- Compare popup ----
-  async function openCompare(originalPath, selfieUrl){
+  async function openCompare(originalPath){
     const modal = document.getElementById('compareModal');
     const originalImg = document.getElementById('compareOriginal');
-    const selfieImg = document.getElementById('compareSelfie');
     const downloadLink = document.getElementById('compareDownload');
     const noOriginalMsg = document.getElementById('compareNoOriginal');
 
-    selfieImg.src = selfieUrl;
     modal.style.display = 'flex';
 
     if(!originalPath){
