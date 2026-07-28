@@ -214,6 +214,25 @@
   </div>
 </div>
 
+<div id="editPhotoModal" style="display:none; position:fixed; inset:0; background:rgba(8,9,13,0.9); z-index:100; align-items:center; justify-content:center; padding:20px;">
+  <div style="background:var(--surface); border:1px solid var(--line-strong); border-radius:12px; max-width:420px; width:100%; padding:20px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+      <h3 class="display" style="font-size:22px; color:var(--gold);">EDIT SPOTTO</h3>
+      <button class="btn btn-secondary" id="closeEditPhoto">Close</button>
+    </div>
+    <input type="hidden" id="editPhotoId">
+    <div class="field">
+      <label for="editLocationInput">Location</label>
+      <input type="text" id="editLocationInput" placeholder="e.g. New Farm Parkrun">
+    </div>
+    <div class="field" style="margin-top:14px;">
+      <label for="editAnswerInput">Correct answer (real name)</label>
+      <input type="text" id="editAnswerInput" placeholder="e.g. Michael Klim">
+    </div>
+    <button class="btn btn-primary" id="saveEditPhoto" style="width:100%; margin-top:18px;">Save Changes</button>
+  </div>
+</div>
+
 <div id="compareModal" style="display:none; position:fixed; inset:0; background:rgba(8,9,13,0.9); z-index:100; align-items:center; justify-content:center; padding:20px;">
   <div style="background:var(--surface); border:1px solid var(--line-strong); border-radius:12px; max-width:500px; width:100%; padding:20px; max-height:90vh; overflow-y:auto;">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
@@ -455,14 +474,20 @@
               <span class="badge ${p.mask_type}">${p.mask_type}</span>
               <span>${p.claimed ? 'CLAIMED' : 'OPEN'}</span>
             </div>
+            <div style="font-size:11px; color:var(--muted); margin-bottom:8px; min-height:14px;">${p.location || ''}</div>
             <div class="pactions">
+              <button class="btn btn-secondary edit-btn" data-id="${p.id}" data-location="${(p.location||'').replace(/"/g,'&quot;')}" data-answer="${(p.answer_name||'').replace(/"/g,'&quot;')}">Edit</button>
               <button class="btn btn-secondary toggle-btn" data-id="${p.id}" data-active="${p.is_active}">${p.is_active ? 'Hide' : 'Show'}</button>
               <button class="btn btn-danger delete-btn" data-id="${p.id}">Delete</button>
             </div>
+            ${p.claimed ? `<button class="btn btn-secondary relist-btn" data-id="${p.id}" style="width:100%; margin-top:6px;">Relist (undo claim, reset timer)</button>` : `<button class="btn btn-secondary relist-btn" data-id="${p.id}" style="width:100%; margin-top:6px;">Relist (reset timer)</button>`}
           </div>
         </div>`;
     }).join('');
 
+    grid.querySelectorAll('.edit-btn').forEach(btn => {
+      btn.addEventListener('click', () => openEditPhoto(btn.dataset.id, btn.dataset.location, btn.dataset.answer));
+    });
     grid.querySelectorAll('.toggle-btn').forEach(btn => {
       btn.addEventListener('click', async () => {
         const isActive = btn.dataset.active === 'true';
@@ -477,7 +502,43 @@
         loadPhotos();
       });
     });
+    grid.querySelectorAll('.relist-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        if(!confirm('Relist this Spotto? This undoes any claim/winner and gives it a fresh 24-hour timer.')) return;
+        const { error } = await sb.from('photos').update({
+          claimed: false,
+          claimed_at: null,
+          winner_name: null,
+          created_at: new Date().toISOString()
+        }).eq('id', btn.dataset.id);
+        if(error){ alert('Relist failed: ' + error.message); return; }
+        loadPhotos();
+      });
+    });
   }
+
+  // ---- Edit photo popup ----
+  function openEditPhoto(id, location, answerName){
+    document.getElementById('editPhotoId').value = id;
+    document.getElementById('editLocationInput').value = location || '';
+    document.getElementById('editAnswerInput').value = answerName || '';
+    document.getElementById('editPhotoModal').style.display = 'flex';
+  }
+  document.getElementById('closeEditPhoto').addEventListener('click', () => {
+    document.getElementById('editPhotoModal').style.display = 'none';
+  });
+  document.getElementById('saveEditPhoto').addEventListener('click', async () => {
+    const id = document.getElementById('editPhotoId').value;
+    const location = document.getElementById('editLocationInput').value.trim();
+    const answerName = document.getElementById('editAnswerInput').value.trim();
+    const { error } = await sb.from('photos').update({
+      location: location || null,
+      answer_name: answerName || null
+    }).eq('id', id);
+    if(error){ alert('Save failed: ' + error.message); return; }
+    document.getElementById('editPhotoModal').style.display = 'none';
+    loadPhotos();
+  });
 
   document.getElementById('uploadPhotoBtn').addEventListener('click', async () => {
     const fileInput = document.getElementById('photoFileInput');
