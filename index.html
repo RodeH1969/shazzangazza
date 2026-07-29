@@ -195,6 +195,58 @@
   /* ---------- Grid ---------- */
   .grid-wrap{ max-width:1180px; margin:0 auto; padding: 36px 28px 100px; }
 
+  .how-to{
+    background: var(--bg-2);
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+    padding: 22px 20px;
+  }
+  .how-to-inner{
+    max-width: 900px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+  }
+  .how-step{ display:flex; gap:12px; align-items:flex-start; }
+  .how-num{
+    flex-shrink:0;
+    width:28px; height:28px;
+    border-radius:50%;
+    background: var(--gold);
+    color:#1b1204;
+    font-family:'Bebas Neue', sans-serif;
+    font-size:16px;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .how-step div{ display:flex; flex-direction:column; gap:2px; }
+  .how-step b{ font-size:13.5px; color:var(--text); }
+  .how-step span{ font-size:12px; color:var(--muted); line-height:1.4; }
+
+  .grid-instruction{
+    text-align:center;
+    font-family:'JetBrains Mono', monospace;
+    font-size:13px;
+    font-weight:600;
+    color: var(--text);
+    margin: 0 0 22px;
+  }
+
+  .tap-hint{
+    position:absolute;
+    top:12px; left:12px;
+    z-index:1;
+    background: rgba(16,18,25,0.8);
+    color:#ffffff;
+    font-family:'JetBrains Mono', monospace;
+    font-size:10.5px;
+    font-weight:600;
+    letter-spacing:0.03em;
+    padding:5px 10px;
+    border-radius:999px;
+    pointer-events:none;
+  }
+
   .ticker-banner{
     background:#ffffff;
     overflow:hidden;
@@ -538,6 +590,26 @@
   }
   .modal-sub{ color: var(--muted); font-size:13px; margin-top:6px; line-height:1.5; }
 
+  .form-section-label{
+    font-family:'JetBrains Mono', monospace;
+    font-size:11px;
+    font-weight:700;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    color: var(--gold);
+    margin-top:22px;
+    margin-bottom:4px;
+    padding-top:16px;
+    border-top: 1px solid var(--line);
+  }
+  .form-section-label:first-of-type{ border-top:none; padding-top:0; margin-top:20px; }
+  .form-section-label span{
+    color: var(--muted-2);
+    font-weight:500;
+    text-transform:none;
+    letter-spacing:0;
+  }
+
   .field{ margin-top:20px; }
   .field label{
     display:block;
@@ -637,6 +709,7 @@
     .prizes-btn::after{ content:"Prizes"; font-size:12px; margin-left:0; }
     .hero{ padding:28px 18px 4px; }
     .hero .stats{ gap:16px; }
+    .how-to-inner{ grid-template-columns: 1fr; gap:16px; }
     .grid-wrap{ padding:26px 16px 80px; }
     .lb-stage{ height:46vh; }
     .lb-actions{ flex-direction:column; }
@@ -677,13 +750,39 @@
     <div class="hero-line">Know the hidden <span class="accent">CELEBRITY</span> under</div>
     <div class="hero-line"><img class="headline-mask mask-shazza" src="shazza.png" alt="Shazza" width="56" height="56"> or <img class="headline-mask mask-gazza" src="gazza.png" alt="Gazza" width="56" height="56"> ?</div>
   </h1>
-  <p>Yes? Claim your prize.</p>
+  <p>Yes? Claim your <span style="color:var(--gold);">$20 prize.</span></p>
   <div class="stats">
     <div class="stat"><b id="statUnclaimed">&mdash;</b><span>Unclaimed</span></div>
     <div class="stat"><b id="statClaimed">&mdash;</b><span>Claimed</span></div>
     <div class="stat"><b>$20</b><span>Prize</span></div>
   </div>
 </section>
+
+<div class="how-to">
+  <div class="how-to-inner">
+    <div class="how-step">
+      <span class="how-num">1</span>
+      <div>
+        <b>Spot the masked face</b>
+        <span>Every photo below hides a celebrity behind a Shazza or Gazza mask.</span>
+      </div>
+    </div>
+    <div class="how-step">
+      <span class="how-num">2</span>
+      <div>
+        <b>Reckon you know who it is?</b>
+        <span>Tap the photo, then tap &ldquo;I Know Who It Is&rdquo; and type their name.</span>
+      </div>
+    </div>
+    <div class="how-step">
+      <span class="how-num">3</span>
+      <div>
+        <b>Guess right, win $20</b>
+        <span>We check it and text you if you&rsquo;re the winner.</span>
+      </div>
+    </div>
+  </div>
+</div>
 
 <div class="ticker-banner">
   <div class="ticker-track">
@@ -693,6 +792,7 @@
 </div>
 
 <div class="grid-wrap">
+  <p class="grid-instruction">\u{1F447} Tap any photo below to make your guess</p>
   <div class="grid" id="grid"></div>
 </div>
 
@@ -743,22 +843,23 @@
       </button>
     </div>
 
+    <div class="form-section-label">Your Guess</div>
     <div class="field">
       <label for="personNameInput">Who is it?</label>
       <input type="text" id="personNameInput" placeholder="Full name">
     </div>
 
+    <div class="form-section-label">Your Details <span>(only shown publicly if you win)</span></div>
     <div class="field">
-      <label for="mobileInput">Mobile number</label>
-      <input type="tel" id="mobileInput" placeholder="04XX XXX XXX" inputmode="tel">
-    </div>
-
-    <div class="field">
-      <label>Your name (published if you win)</label>
+      <label>Your name</label>
       <div style="display:flex; gap:8px;">
         <input type="text" id="firstNameInput" placeholder="First name" style="flex:2;">
         <input type="text" id="surnameInitialInput" placeholder="Surname initial" maxlength="1" style="flex:1; text-transform:uppercase;">
       </div>
+    </div>
+    <div class="field">
+      <label for="mobileInput">Mobile number <span style="text-transform:none; letter-spacing:0; color:var(--muted-2);">(never published, only used to text you)</span></label>
+      <input type="tel" id="mobileInput" placeholder="04XX XXX XXX" inputmode="tel">
     </div>
 
     <div class="modal-actions">
@@ -817,6 +918,7 @@
       <article class="ticket" tabindex="0" data-id="${p.id}" aria-label="Spotto ${num}, ${p.claimed ? label + ' claimed' : label + ' still open'}">
         <div class="photo">
           <img src="${p.imageUrl}" alt="" loading="lazy">
+          ${!p.claimed ? `<div class="tap-hint">Tap to guess</div>` : ''}
           <div class="mask-badge type-${p.mask_type}" title="${label} is hidden in this photo">${icons[p.mask_type]}</div>
           ${p.claimed ? `<div class="stamp type-${p.mask_type}">${label} Claimed${timeLabel ? ' &middot; ' + timeLabel : ''}</div>` : `<div id="expired-${p.id}"></div>`}
           ${p.location ? `<div class="location-strip">${p.location}</div>` : ''}
