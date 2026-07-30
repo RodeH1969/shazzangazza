@@ -200,6 +200,10 @@
             <label for="answerNameInput">Correct answer (real name)</label>
             <input type="text" id="answerNameInput" placeholder="e.g. Michael Klim">
           </div>
+          <div class="field">
+            <label for="answerDiffInput">What&rsquo;s different (the edit)</label>
+            <input type="text" id="answerDiffInput" placeholder="e.g. added a UFO in the sky">
+          </div>
           <button class="btn btn-primary" id="uploadPhotoBtn">Upload</button>
         </div>
       </div>
@@ -229,6 +233,10 @@
     <div class="field" style="margin-top:14px;">
       <label for="editAnswerInput">Correct answer (real name)</label>
       <input type="text" id="editAnswerInput" placeholder="e.g. Michael Klim">
+    </div>
+    <div class="field" style="margin-top:14px;">
+      <label for="editDiffInput">What&rsquo;s different (the edit)</label>
+      <input type="text" id="editDiffInput" placeholder="e.g. added a UFO in the sky">
     </div>
     <button class="btn btn-primary" id="saveEditPhoto" style="width:100%; margin-top:18px;">Save Changes</button>
   </div>
@@ -346,6 +354,7 @@
         <div class="claim-info">
           <div class="row"><b>${spotto ? 'Spotto ' + spotto.num : 'Unknown Spotto'}</b> &middot; <span class="badge ${claim.mask_type}">${claim.mask_type}</span></div>
           <div class="row">They say it's: <b>${claim.person_name || '(no name given)'}</b></div>
+          <div class="row">What's different: <b>${claim.diff_guess || '(no answer given)'}</b></div>
           <div class="row">Claimant: <b>${claim.claimant_name || '(no name given)'}</b></div>
           <div class="row">Mobile: <b>${claim.mobile_number}</b></div>
           <div class="row">Submitted: <b>${fmtTime(claim.created_at)}</b></div>
@@ -477,7 +486,7 @@
             </div>
             <div style="font-size:11px; color:var(--muted); margin-bottom:8px; min-height:14px;">${p.location || ''}</div>
             <div class="pactions">
-              <button class="btn btn-secondary edit-btn" data-id="${p.id}" data-location="${(p.location||'').replace(/"/g,'&quot;')}" data-answer="${(p.answer_name||'').replace(/"/g,'&quot;')}">Edit</button>
+              <button class="btn btn-secondary edit-btn" data-id="${p.id}" data-location="${(p.location||'').replace(/"/g,'&quot;')}" data-answer="${(p.answer_name||'').replace(/"/g,'&quot;')}" data-diff="${(p.answer_diff||'').replace(/"/g,'&quot;')}">Edit</button>
               <button class="btn btn-secondary toggle-btn" data-id="${p.id}" data-active="${p.is_active}">${p.is_active ? 'Hide' : 'Show'}</button>
               <button class="btn btn-danger delete-btn" data-id="${p.id}">Delete</button>
             </div>
@@ -487,7 +496,7 @@
     }).join('');
 
     grid.querySelectorAll('.edit-btn').forEach(btn => {
-      btn.addEventListener('click', () => openEditPhoto(btn.dataset.id, btn.dataset.location, btn.dataset.answer));
+      btn.addEventListener('click', () => openEditPhoto(btn.dataset.id, btn.dataset.location, btn.dataset.answer, btn.dataset.diff));
     });
     grid.querySelectorAll('.toggle-btn').forEach(btn => {
       btn.addEventListener('click', async () => {
@@ -519,10 +528,11 @@
   }
 
   // ---- Edit photo popup ----
-  function openEditPhoto(id, location, answerName){
+  function openEditPhoto(id, location, answerName, answerDiff){
     document.getElementById('editPhotoId').value = id;
     document.getElementById('editLocationInput').value = location || '';
     document.getElementById('editAnswerInput').value = answerName || '';
+    document.getElementById('editDiffInput').value = answerDiff || '';
     document.getElementById('editPhotoModal').style.display = 'flex';
   }
   document.getElementById('closeEditPhoto').addEventListener('click', () => {
@@ -532,9 +542,11 @@
     const id = document.getElementById('editPhotoId').value;
     const location = document.getElementById('editLocationInput').value.trim();
     const answerName = document.getElementById('editAnswerInput').value.trim();
+    const answerDiff = document.getElementById('editDiffInput').value.trim();
     const { error } = await sb.from('photos').update({
       location: location || null,
-      answer_name: answerName || null
+      answer_name: answerName || null,
+      answer_diff: answerDiff || null
     }).eq('id', id);
     if(error){ alert('Save failed: ' + error.message); return; }
     document.getElementById('editPhotoModal').style.display = 'none';
@@ -547,11 +559,13 @@
     const maskType = document.getElementById('maskTypeSelect').value;
     const location = document.getElementById('locationInput').value.trim();
     const answerName = document.getElementById('answerNameInput').value.trim();
+    const answerDiff = document.getElementById('answerDiffInput').value.trim();
     const file = fileInput.files[0];
     const originalFile = originalInput.files[0];
     if(!file){ alert('Choose the public photo first.'); return; }
     if(!originalFile){ alert('Choose the original (unmasked) photo too — you\'ll need it to check claims.'); return; }
     if(!answerName){ alert('Enter the correct answer (the real name) for this Spotto.'); return; }
+    if(!answerDiff){ alert('Enter what\'s different (the edit) for this Spotto.'); return; }
 
     const stamp = `${Date.now()}-${Math.random().toString(36).slice(2,8)}`;
     const fileName = `photo-${stamp}.jpg`;
@@ -569,6 +583,7 @@
       mask_type: maskType,
       location: location || null,
       answer_name: answerName,
+      answer_diff: answerDiff,
       claimed: false,
       is_active: true
     });
@@ -578,6 +593,7 @@
     originalInput.value = '';
     document.getElementById('locationInput').value = '';
     document.getElementById('answerNameInput').value = '';
+    document.getElementById('answerDiffInput').value = '';
     loadPhotos();
   });
 </script>

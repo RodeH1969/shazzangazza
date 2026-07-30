@@ -852,7 +852,7 @@
     <div class="modal-head">
       <div>
         <h2>Claim This Spotto</h2>
-        <p class="modal-sub">Reckon you know who's under the mask? Type their name and pop in your mobile &mdash; our admin checks it before anyone's declared a winner.</p>
+        <p class="modal-sub">Reckon you know who's under the mask? There&rsquo;s also something edited in this photo &mdash; spot that too. Our admin checks both before anyone's declared a winner.</p>
       </div>
       <button class="icon-btn" id="closeClaim" aria-label="Close">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
@@ -863,6 +863,10 @@
     <div class="field">
       <label for="personNameInput">Who is it?</label>
       <input type="text" id="personNameInput" placeholder="Full name">
+    </div>
+    <div class="field">
+      <label for="diffGuessInput">What&rsquo;s different about this photo?</label>
+      <input type="text" id="diffGuessInput" placeholder="Spot the edit&hellip;">
     </div>
 
     <div class="form-section-label">Your Details <span>(only shown publicly if you win)</span></div>
@@ -1061,10 +1065,13 @@
     }
     const lbAnswer = document.getElementById('lbAnswer');
     if(showReveal && currentPhoto.answer_name){
+      const diffBit = currentPhoto.answer_diff
+        ? `<div style="font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:600; letter-spacing:0.02em; text-transform:none; margin-top:2px;">\u{1F50D} What was different: ${currentPhoto.answer_diff}</div>`
+        : '';
       const winnerBit = currentPhoto.winner_name
         ? `<div style="font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:600; letter-spacing:0.02em; text-transform:none; margin-top:2px;">\u{1F3C6} Won by ${currentPhoto.winner_name}${currentPhoto.claimed_at ? ' &middot; ' + claimedTimeLabel(currentPhoto.claimed_at) : ''}</div>`
         : '';
-      lbAnswer.innerHTML = `${currentPhoto.answer_name}${winnerBit}`;
+      lbAnswer.innerHTML = `${currentPhoto.answer_name}${diffBit}${winnerBit}`;
       lbAnswer.style.display = 'block';
     } else {
       lbAnswer.style.display = 'none';
@@ -1113,6 +1120,7 @@
   const submitClaimBtn = document.getElementById('submitClaim');
   const mobileInput = document.getElementById('mobileInput');
   const personNameInput = document.getElementById('personNameInput');
+  const diffGuessInput = document.getElementById('diffGuessInput');
   const firstNameInput = document.getElementById('firstNameInput');
   const surnameInitialInput = document.getElementById('surnameInitialInput');
 
@@ -1130,6 +1138,7 @@
 
   function resetClaimForm(){
     personNameInput.value = '';
+    diffGuessInput.value = '';
     mobileInput.value = '';
     firstNameInput.value = '';
     surnameInitialInput.value = '';
@@ -1139,10 +1148,12 @@
 
   submitClaimBtn.addEventListener('click', async () => {
     const personName = personNameInput.value.trim();
+    const diffGuess = diffGuessInput.value.trim();
     const mobile = mobileInput.value.trim();
     const firstName = firstNameInput.value.trim();
     const surnameInitial = surnameInitialInput.value.trim();
     if(!personName){ showToast('Type in who you think it is.'); personNameInput.focus(); return; }
+    if(!diffGuess){ showToast('Type in what\'s different about the photo.'); diffGuessInput.focus(); return; }
     if(!mobile){ showToast('Pop in your mobile number.'); mobileInput.focus(); return; }
     if(!firstName){ showToast('Pop in your first name.'); firstNameInput.focus(); return; }
     if(!surnameInitial){ showToast('Pop in your surname initial.'); surnameInitialInput.focus(); return; }
@@ -1159,6 +1170,7 @@
         mask_type: currentPhoto.mask_type,
         mobile_number: mobile,
         person_name: personName,
+        diff_guess: diffGuess,
         claimant_name: claimantName,
         status: 'pending'
       });
