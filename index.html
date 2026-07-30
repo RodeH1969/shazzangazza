@@ -263,6 +263,10 @@
     0%, 100%{ transform: translate(-50%, -50%) scale(1); }
     50%{ transform: translate(-50%, -50%) scale(1.12); }
   }
+  @keyframes tapPulseMobile{
+    0%, 100%{ transform: translate(-50%, 0) scale(1); }
+    50%{ transform: translate(-50%, 0) scale(1.1); }
+  }
   @media (prefers-reduced-motion: reduce){
     .tap-hint{ animation:none; }
   }
@@ -634,11 +638,20 @@
   .field label{
     display:block;
     font-family:'JetBrains Mono', monospace;
-    font-size:11px;
+    font-size:12px;
+    font-weight:700;
     letter-spacing:0.06em;
     text-transform:uppercase;
-    color: var(--muted);
+    color: #ffffff;
     margin-bottom:8px;
+    animation: labelPulse 1.8s ease-in-out infinite;
+  }
+  @keyframes labelPulse{
+    0%, 100%{ opacity:1; }
+    50%{ opacity:0.55; }
+  }
+  @media (prefers-reduced-motion: reduce){
+    .field label{ animation:none; }
   }
 
   input[type=tel], input[type=text]{
@@ -733,6 +746,13 @@
     .grid-wrap{ padding:26px 16px 80px; }
     .lb-stage{ height:46vh; }
     .lb-actions{ flex-direction:column; }
+    .tap-hint{
+      top:auto; bottom:14px; left:50%;
+      transform: translate(-50%, 0);
+      font-size:16px;
+      padding:10px 20px;
+      animation: tapPulseMobile 1.6s ease-in-out infinite;
+    }
     .stamp{
       position:absolute;
       top:10px; right:10px;
@@ -786,15 +806,15 @@
     <div class="how-step">
       <span class="how-num">2</span>
       <div>
-        <b>Reckon you know who it is?</b>
-        <span>Tap the photo, then tap &ldquo;I Know Who It Is&rdquo; and type their name.</span>
+        <b>Spot 1 thing that doesn&rsquo;t look right</b>
+        <span>Every photo also has something edited into it &mdash; find it too.</span>
       </div>
     </div>
     <div class="how-step">
       <span class="how-num">3</span>
       <div>
         <b>Be the 1st to guess right</b>
-        <span>We check it and text you if you&rsquo;re the winner.</span>
+        <span>Tap the photo, tell us who it is and what&rsquo;s off, and be first &mdash; win $20.</span>
       </div>
     </div>
   </div>
@@ -865,8 +885,8 @@
       <input type="text" id="personNameInput" placeholder="Full name">
     </div>
     <div class="field">
-      <label for="diffGuessInput">What&rsquo;s different about this photo?</label>
-      <input type="text" id="diffGuessInput" placeholder="Spot the edit&hellip;">
+      <label for="diffGuessInput">Spot 1 thing that doesn&rsquo;t look right</label>
+      <input type="text" id="diffGuessInput" placeholder="What&rsquo;s off in this photo&hellip;">
     </div>
 
     <div class="form-section-label">Your Details <span>(only shown publicly if you win)</span></div>
