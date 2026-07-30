@@ -241,17 +241,30 @@
 
   .tap-hint{
     position:absolute;
-    top:12px; left:12px;
+    top:50%; left:50%;
+    transform: translate(-50%, -50%);
     z-index:1;
-    background: rgba(16,18,25,0.8);
+    background: #ffd60a;
     color:#ffffff;
-    font-family:'JetBrains Mono', monospace;
-    font-size:10.5px;
-    font-weight:600;
-    letter-spacing:0.03em;
-    padding:5px 10px;
+    font-family:'Bebas Neue', sans-serif;
+    font-weight:700;
+    font-size:20px;
+    letter-spacing:0.06em;
+    text-transform:uppercase;
+    padding:12px 26px;
     border-radius:999px;
+    border: 3px solid #ffffff;
+    box-shadow: 0 8px 22px rgba(0,0,0,0.55);
+    text-shadow: 0 1px 3px rgba(0,0,0,0.5);
     pointer-events:none;
+    animation: tapPulse 1.6s ease-in-out infinite;
+  }
+  @keyframes tapPulse{
+    0%, 100%{ transform: translate(-50%, -50%) scale(1); }
+    50%{ transform: translate(-50%, -50%) scale(1.12); }
+  }
+  @media (prefers-reduced-motion: reduce){
+    .tap-hint{ animation:none; }
   }
 
   .ticker-banner{
@@ -741,15 +754,12 @@
     *{ transition:none !important; animation:none !important; }
   }
 </style>
+<link rel="icon" type="image/png" href="logo.png">
 </head>
 <body>
 
 <header>
   <img class="logo-slot" src="logo.png" alt="Shazza and Gazza logo">
-  <button class="prizes-btn" id="openPrizes">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12v9H4v-9"/><path d="M2 7h20v5H2z"/><path d="M12 22V7"/><path d="M12 7S8 7 8 4.5 10 1 12 4c2-3 4-.5 4 0S16 7 12 7Z"/></svg>
-    <span>Prizes</span>
-  </button>
 </header>
 
 <section class="hero">
@@ -757,7 +767,6 @@
     <div class="hero-line">Know the hidden <span class="accent">CELEBRITY</span> under</div>
     <div class="hero-line"><img class="headline-mask mask-shazza" src="shazza.png" alt="Shazza" width="56" height="56"> or <img class="headline-mask mask-gazza" src="gazza.png" alt="Gazza" width="56" height="56"> ?</div>
   </h1>
-  <p>Claim <span style="color:var(--gold);">$20</span> <img src="aldi.jpeg" alt="Aldi" class="cta-aldi"> gift card</p>
   <div class="stats">
     <div class="stat"><b id="statUnclaimed">&mdash;</b><span>Unclaimed</span></div>
     <div class="stat"><b id="statClaimed">&mdash;</b><span>Claimed</span></div>
@@ -965,11 +974,17 @@
       photos.forEach(p => {
         const fuseEl = document.getElementById(`fuse-${p.id}`);
         if(fuseEl){
-          const remaining = p.fuseDeadline.getTime() - Date.now();
-          if(remaining <= 0){
-            fuseEl.innerHTML = `<span class="fuse-dead">\u{1F4A5} TOO LATE &mdash; nobody cracked it in time</span>`;
+          if(p.claimed){
+            fuseEl.innerHTML = '';
+            fuseEl.style.display = 'none';
           } else {
-            fuseEl.innerHTML = `<span class="fuse-label">\u{1F575}\u{FE0F} Nobody&rsquo;s cracked it yet</span><span class="fuse-time">\u{1F4A3} ${fmtHMS(remaining)} left to claim</span>`;
+            fuseEl.style.display = '';
+            const remaining = p.fuseDeadline.getTime() - Date.now();
+            if(remaining <= 0){
+              fuseEl.innerHTML = `<span class="fuse-dead">\u{1F4A5} TOO LATE &mdash; nobody cracked it in time</span>`;
+            } else {
+              fuseEl.innerHTML = `<span class="fuse-label">\u{1F575}\u{FE0F} Nobody&rsquo;s cracked it yet</span><span class="fuse-time">\u{1F4A3} ${fmtHMS(remaining)} left to claim</span>`;
+            }
           }
         }
         if(!p.claimed){
@@ -1176,7 +1191,8 @@
   // ---- Prizes modal ----
   const prizesModal = document.getElementById('prizesModal');
   function closePrizesModal(){ prizesModal.classList.remove('open'); }
-  document.getElementById('openPrizes').addEventListener('click', () => prizesModal.classList.add('open'));
+  const openPrizesBtn = document.getElementById('openPrizes');
+  if(openPrizesBtn) openPrizesBtn.addEventListener('click', () => prizesModal.classList.add('open'));
   document.getElementById('closePrizes').addEventListener('click', closePrizesModal);
   prizesModal.addEventListener('click', e => { if(e.target === prizesModal) closePrizesModal(); });
 
