@@ -68,29 +68,6 @@
     object-fit:contain;
     display:block;
   }
-  .prizes-btn{
-    position:absolute;
-    top:50%;
-    right:20px;
-    transform: translateY(-50%);
-    flex-shrink:0;
-    display:flex;
-    align-items:center;
-    gap:8px;
-    background: var(--surface-2);
-    border:1px solid var(--line-strong);
-    color: var(--gold);
-    padding:10px 16px;
-    border-radius:999px;
-    font-weight:700;
-    font-size:13px;
-    letter-spacing:0.03em;
-    cursor:pointer;
-    transition: background .15s ease, transform .15s ease, border-color .15s ease;
-  }
-  .prizes-btn:hover{ background:#2c3245; border-color: var(--gold-dim); transform: translateY(-50%) translateY(-1px); }
-  .prizes-btn svg{ width:16px; height:16px; }
-
   /* ---------- Hero strip ---------- */
   .hero{
     max-width:1180px;
@@ -169,13 +146,6 @@
     margin: 14px auto 0;
     font-size:30px;
     line-height:1.25;
-  }
-  .cta-aldi{
-    height: 0.85em;
-    width: auto;
-    vertical-align: -0.1em;
-    border-radius: 6px;
-    margin: 0 2px;
   }
   .hero .stats{
     display:flex;
@@ -696,35 +666,6 @@
   .toast.show{ opacity:1; transform: translateX(-50%) translateY(0); }
   .toast svg{ width:18px; height:18px; color: var(--gazza); flex-shrink:0; }
 
-  /* ---------- Prizes modal ---------- */
-  #prizesModal .panel{
-    width:100%; max-width:440px;
-    background: var(--surface);
-    border:1px solid var(--line-strong);
-    border-radius: var(--radius);
-    box-shadow: var(--shadow);
-    overflow:hidden;
-  }
-  .prize-hero{
-    padding: 24px 0 14px;
-    background: linear-gradient(160deg, #241c10, var(--surface));
-    display:flex; align-items:center; justify-content:center;
-    position:relative;
-    border-bottom:1px solid var(--line);
-  }
-  .prize-hero img{
-    height:72px;
-    width:auto;
-    border-radius:12px;
-    box-shadow: 0 8px 20px rgba(0,0,0,0.4);
-  }
-  .prize-body{ padding: 22px 24px 24px; }
-  .prize-body h2{
-    font-family:'Bebas Neue', sans-serif;
-    font-size:26px;
-  }
-  .prize-body p{ color: var(--muted); font-size:13.5px; line-height:1.6; margin-top:10px; }
-
   footer{
     text-align:center;
     padding: 30px 20px 40px;
@@ -737,9 +678,6 @@
   @media (max-width: 560px){
     header{ padding:16px 16px; }
     .logo-slot{ height:130px; }
-    .prizes-btn{ right:14px; padding:9px 12px; font-size:0; }
-    .prizes-btn svg{ width:18px; height:18px; }
-    .prizes-btn::after{ content:"Prizes"; font-size:12px; margin-left:0; }
     .hero{ padding:28px 18px 4px; }
     .hero .stats{ gap:16px; }
     .how-to-inner{ grid-template-columns: 1fr; gap:16px; }
@@ -790,7 +728,7 @@
   <div class="stats">
     <div class="stat"><b id="statUnclaimed">&mdash;</b><span>Unclaimed</span></div>
     <div class="stat"><b id="statClaimed">&mdash;</b><span>Claimed</span></div>
-    <div class="stat"><b>$20</b><span>Prize</span></div>
+    <div class="stat"><b id="statTotal">&mdash;</b><span>Spottos Today</span></div>
   </div>
 </section>
 
@@ -813,8 +751,8 @@
     <div class="how-step">
       <span class="how-num">3</span>
       <div>
-        <b>Be the 1st to guess right</b>
-        <span>Tap the photo, tell us who it is and what&rsquo;s off, and be first &mdash; win $20.</span>
+        <b>Be the 1st to claim it</b>
+        <span>See how many of today&rsquo;s 10 Spottos you can be the first to claim!</span>
       </div>
     </div>
   </div>
@@ -828,7 +766,7 @@
 </div>
 
 <div class="grid-wrap">
-  <p class="grid-instruction">\u{1F447} Tap any photo below to make your guess</p>
+  <p class="grid-instruction">👇 Tap any photo below to make your guess</p>
   <div class="grid" id="grid"></div>
 </div>
 
@@ -909,21 +847,6 @@
   </div>
 </div>
 
-<!-- Prizes modal -->
-<div class="overlay" id="prizesModal">
-  <div class="panel">
-    <div class="prize-hero">
-      <img src="aldi.jpeg" alt="Aldi">
-    </div>
-    <div class="prize-body">
-      <h2>$20 if it&rsquo;s you</h2>
-      <p>Claim a photo and it checks out? You walk away with a $20 Aldi gift card. Simple as that.</p>
-      <div class="modal-actions">
-        <button class="btn btn-primary" id="closePrizes" style="width:100%">Got It</button>
-      </div>
-    </div>
-  </div>
-</div>
 
 <div class="toast" id="toast">
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="M22 4 12 14.01l-3-3"/></svg>
@@ -977,6 +900,7 @@
     const unclaimedCount = photos.length - claimedCount;
     document.getElementById('statUnclaimed').textContent = unclaimedCount;
     document.getElementById('statClaimed').textContent = claimedCount;
+    document.getElementById('statTotal').textContent = photos.length;
   }
 
   function fmtHMS(ms){
@@ -1131,7 +1055,7 @@
 
   document.addEventListener('keydown', e => {
     if(e.key === 'Escape'){
-      closeLightbox(); closeClaimModal(); closePrizesModal();
+      closeLightbox(); closeClaimModal();
     }
   });
 
@@ -1219,14 +1143,6 @@
       showToast('Link copied — send it to your mate.');
     }
   });
-
-  // ---- Prizes modal ----
-  const prizesModal = document.getElementById('prizesModal');
-  function closePrizesModal(){ prizesModal.classList.remove('open'); }
-  const openPrizesBtn = document.getElementById('openPrizes');
-  if(openPrizesBtn) openPrizesBtn.addEventListener('click', () => prizesModal.classList.add('open'));
-  document.getElementById('closePrizes').addEventListener('click', closePrizesModal);
-  prizesModal.addEventListener('click', e => { if(e.target === prizesModal) closePrizesModal(); });
 
   // ---- Toast ----
   const toast = document.getElementById('toast');
