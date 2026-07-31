@@ -974,6 +974,15 @@
     grid.innerHTML = photos.map(ticketCard).join('');
     renderStats();
     startFuseTimers();
+    openSpottoFromHash();
+  }
+
+  function openSpottoFromHash(){
+    const match = location.hash.match(/^#spotto-(\d+)$/);
+    if(!match) return;
+    const num = parseInt(match[1], 10);
+    const target = photos[num - 1]; // Spotto numbers are 1-based position in the list
+    if(target) openLightbox(target.id);
   }
 
   loadPhotos();
@@ -1038,6 +1047,9 @@
     lightbox.classList.remove('open');
     document.body.style.overflow = '';
     if(pz){ pz.dispose(); pz = null; }
+    if(location.hash.startsWith('#spotto-')){
+      history.replaceState(null, '', location.pathname + location.search);
+    }
   }
 
   grid.addEventListener('click', e => {
