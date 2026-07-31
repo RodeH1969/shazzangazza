@@ -471,7 +471,7 @@
           .eq('win_date', today);
         if(!existingWin || existingWin.length === 0){
           await sb.from('hat_trick_winners').insert({ claimant_name: claimantName, win_date: today });
-          alert(`\u{1F3A9} HAT TRICK! ${claimantName} just hit 3 approved claims today — they've won the $50 Aldi gift card. Text them on ${mobileNumber} to sort it out.`);
+          alert(`\u{1F3A9} HAT TRICK! ${claimantName} just hit 3 approved claims today — they've won the $20 Aldi gift card. Text them on ${mobileNumber} to sort it out.`);
         }
       }
     }
