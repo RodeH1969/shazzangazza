@@ -269,6 +269,83 @@
   @media (prefers-reduced-motion: reduce){
     .ticker-track{ animation:none; }
   }
+
+  .hattrick-banner{
+    background: linear-gradient(135deg, #7a1220, #c81e3a 55%, #7a1220);
+    border-bottom: 1px solid var(--line);
+    padding: 20px 20px;
+  }
+  .hattrick-inner{
+    max-width: 900px;
+    margin: 0 auto;
+    display:flex;
+    align-items:center;
+    gap:16px;
+    flex-wrap:wrap;
+    justify-content:center;
+    text-align:center;
+  }
+  .hattrick-aldi{
+    height: 46px;
+    width:auto;
+    border-radius:8px;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.35);
+    flex-shrink:0;
+  }
+  .hattrick-copy{ text-align:left; }
+  .hattrick-title{
+    font-family:'Bebas Neue', sans-serif;
+    font-size:20px;
+    letter-spacing:0.04em;
+    color:#ffffff;
+    animation: hattrickPulse 2s ease-in-out infinite;
+  }
+  .hattrick-sub{
+    font-family:'JetBrains Mono', monospace;
+    font-size:12px;
+    color: rgba(255,255,255,0.9);
+    margin-top:3px;
+  }
+  .hattrick-sub b{ color:#ffe58a; }
+  @keyframes hattrickPulse{
+    0%, 100%{ opacity:1; }
+    50%{ opacity:0.7; }
+  }
+  .hattrick-winners{
+    max-width:900px;
+    margin: 14px auto 0;
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    justify-content:center;
+  }
+  .hattrick-empty{
+    font-family:'JetBrains Mono', monospace;
+    font-size:11.5px;
+    color: rgba(255,255,255,0.75);
+    font-style:italic;
+  }
+  .hattrick-badge{
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.4);
+    color:#ffffff;
+    font-family:'JetBrains Mono', monospace;
+    font-weight:700;
+    font-size:12px;
+    padding:6px 14px;
+    border-radius:999px;
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+  }
+  @media (prefers-reduced-motion: reduce){
+    .hattrick-title{ animation:none; }
+  }
+  @media (max-width: 640px){
+    .hattrick-inner{ flex-direction:column; text-align:center; }
+    .hattrick-copy{ text-align:center; }
+  }
+
   .grid{
     display:grid;
     grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
@@ -774,6 +851,19 @@
   </div>
 </div>
 
+<div class="hattrick-banner">
+  <div class="hattrick-inner">
+    <img src="aldi.jpeg" alt="Aldi" class="hattrick-aldi">
+    <div class="hattrick-copy">
+      <div class="hattrick-title">🎩 THE HAT TRICK CHALLENGE</div>
+      <div class="hattrick-sub">Get <b>3 Spottos right</b> in ONE DAY &mdash; score a <b>$50 Aldi gift card</b>.</div>
+    </div>
+  </div>
+  <div class="hattrick-winners" id="hattrickWinners">
+    <span class="hattrick-empty">Nobody&rsquo;s cracked the Hat Trick today&hellip; yet. Could be you!</span>
+  </div>
+</div>
+
 <div class="grid-wrap">
   <p class="grid-instruction">👇 Tap any photo below to make your guess</p>
   <div class="grid" id="grid"></div>
@@ -995,6 +1085,23 @@
   }
 
   loadPhotos();
+
+  async function loadHatTrickWinners(){
+    const el = document.getElementById('hattrickWinners');
+    if(!sb || !el) return;
+    const today = new Date().toISOString().slice(0,10);
+    const { data, error } = await sb
+      .from('hat_trick_winners')
+      .select('*')
+      .eq('win_date', today)
+      .order('created_at', { ascending: true });
+    if(error || !data || data.length === 0){
+      el.innerHTML = `<span class="hattrick-empty">Nobody&rsquo;s cracked the Hat Trick today&hellip; yet. Could be you!</span>`;
+      return;
+    }
+    el.innerHTML = data.map(w => `<span class="hattrick-badge">\u{1F3A9} ${w.claimant_name}</span>`).join('');
+  }
+  loadHatTrickWinners();
 
   // ---- Lightbox ----
   const lightbox = document.getElementById('lightbox');

@@ -362,7 +362,7 @@
           <div class="claim-actions">
             <button class="btn btn-secondary compare-btn" data-original="${spotto ? spotto.originalPath || '' : ''}">View Original</button>
             ${claim.status === 'pending' ? `
-              <button class="btn btn-primary approve-btn" data-id="${claim.id}" data-photo="${claim.photo_id}" data-name="${(claim.claimant_name || '').replace(/"/g,'&quot;')}">Approve</button>
+              <button class="btn btn-primary approve-btn" data-id="${claim.id}" data-photo="${claim.photo_id}" data-name="${(claim.claimant_name || '').replace(/"/g,'&quot;')}" data-mobile="${(claim.mobile_number || '').replace(/"/g,'&quot;')}">Approve</button>
               <button class="btn btn-danger reject-btn" data-id="${claim.id}">Reject</button>` : ''}
           </div>
         </div>`;
@@ -370,7 +370,7 @@
     }
 
     list.querySelectorAll('.approve-btn').forEach(btn => {
-      btn.addEventListener('click', () => approveClaim(btn.dataset.id, btn.dataset.photo, btn.dataset.name));
+      btn.addEventListener('click', () => approveClaim(btn.dataset.id, btn.dataset.photo, btn.dataset.name, btn.dataset.mobile));
     });
     list.querySelectorAll('.reject-btn').forEach(btn => {
       btn.addEventListener('click', () => rejectClaim(btn.dataset.id));
@@ -445,12 +445,37 @@
   zoomLightbox.addEventListener('click', e => { if(e.target === zoomLightbox) closeZoomLightbox(); });
   document.addEventListener('keydown', e => { if(e.key === 'Escape') closeZoomLightbox(); });
 
-  async function approveClaim(claimId, photoId, claimantName){
+  async function approveClaim(claimId, photoId, claimantName, mobileNumber){
     if(!confirm('Approve this claim? This puts the claimed sash up on the live site and publishes the winner name.')) return;
     const now = new Date().toISOString();
     const { error: e1 } = await sb.from('claims').update({ status: 'approved' }).eq('id', claimId);
     const { error: e2 } = await sb.from('photos').update({ claimed: true, claimed_at: now, winner_name: claimantName || null }).eq('id', photoId);
     if(e1 || e2){ alert('Something went wrong approving that — try again.'); return; }
+
+    // Hat Trick check: has this mobile number hit 3 approved claims today?
+    if(mobileNumber){
+      const todayStart = new Date();
+      todayStart.setHours(0,0,0,0);
+      const { data: todaysApproved } = await sb
+        .from('claims')
+        .select('id')
+        .eq('mobile_number', mobileNumber)
+        .eq('status', 'approved')
+        .gte('created_at', todayStart.toISOString());
+      if(todaysApproved && todaysApproved.length >= 3){
+        const today = new Date().toISOString().slice(0,10);
+        const { data: existingWin } = await sb
+          .from('hat_trick_winners')
+          .select('id')
+          .eq('claimant_name', claimantName)
+          .eq('win_date', today);
+        if(!existingWin || existingWin.length === 0){
+          await sb.from('hat_trick_winners').insert({ claimant_name: claimantName, win_date: today });
+          alert(`\u{1F3A9} HAT TRICK! ${claimantName} just hit 3 approved claims today — they've won the $50 Aldi gift card. Text them on ${mobileNumber} to sort it out.`);
+        }
+      }
+    }
+
     loadClaims();
     loadPhotos();
   }
