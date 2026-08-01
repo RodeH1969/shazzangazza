@@ -192,6 +192,15 @@
               <option value="gazza">Gazza</option>
             </select>
           </div>
+          <div class="field" style="max-width:160px;">
+            <label for="difficultySelect">Difficulty</label>
+            <select id="difficultySelect">
+              <option value="Easy">Easy</option>
+              <option value="Moderate">Moderate</option>
+              <option value="Tough">Tough</option>
+              <option value="Diabolical">Diabolical</option>
+            </select>
+          </div>
           <div class="field">
             <label for="locationInput">Location</label>
             <input type="text" id="locationInput" placeholder="e.g. New Farm Parkrun">
@@ -237,6 +246,15 @@
     <div class="field" style="margin-top:14px;">
       <label for="editDiffInput">What&rsquo;s different (the edit)</label>
       <input type="text" id="editDiffInput" placeholder="e.g. added a UFO in the sky">
+    </div>
+    <div class="field" style="margin-top:14px;">
+      <label for="editDifficultySelect">Difficulty</label>
+      <select id="editDifficultySelect">
+        <option value="Easy">Easy</option>
+        <option value="Moderate">Moderate</option>
+        <option value="Tough">Tough</option>
+        <option value="Diabolical">Diabolical</option>
+      </select>
     </div>
     <button class="btn btn-primary" id="saveEditPhoto" style="width:100%; margin-top:18px;">Save Changes</button>
   </div>
@@ -511,7 +529,7 @@
             </div>
             <div style="font-size:11px; color:var(--muted); margin-bottom:8px; min-height:14px;">${p.location || ''}</div>
             <div class="pactions">
-              <button class="btn btn-secondary edit-btn" data-id="${p.id}" data-location="${(p.location||'').replace(/"/g,'&quot;')}" data-answer="${(p.answer_name||'').replace(/"/g,'&quot;')}" data-diff="${(p.answer_diff||'').replace(/"/g,'&quot;')}">Edit</button>
+              <button class="btn btn-secondary edit-btn" data-id="${p.id}" data-location="${(p.location||'').replace(/"/g,'&quot;')}" data-answer="${(p.answer_name||'').replace(/"/g,'&quot;')}" data-diff="${(p.answer_diff||'').replace(/"/g,'&quot;')}" data-difficulty="${(p.difficulty||'').replace(/"/g,'&quot;')}">Edit</button>
               <button class="btn btn-secondary toggle-btn" data-id="${p.id}" data-active="${p.is_active}">${p.is_active ? 'Hide' : 'Show'}</button>
               <button class="btn btn-danger delete-btn" data-id="${p.id}">Delete</button>
             </div>
@@ -521,7 +539,7 @@
     }).join('');
 
     grid.querySelectorAll('.edit-btn').forEach(btn => {
-      btn.addEventListener('click', () => openEditPhoto(btn.dataset.id, btn.dataset.location, btn.dataset.answer, btn.dataset.diff));
+      btn.addEventListener('click', () => openEditPhoto(btn.dataset.id, btn.dataset.location, btn.dataset.answer, btn.dataset.diff, btn.dataset.difficulty));
     });
     grid.querySelectorAll('.toggle-btn').forEach(btn => {
       btn.addEventListener('click', async () => {
@@ -553,11 +571,12 @@
   }
 
   // ---- Edit photo popup ----
-  function openEditPhoto(id, location, answerName, answerDiff){
+  function openEditPhoto(id, location, answerName, answerDiff, difficulty){
     document.getElementById('editPhotoId').value = id;
     document.getElementById('editLocationInput').value = location || '';
     document.getElementById('editAnswerInput').value = answerName || '';
     document.getElementById('editDiffInput').value = answerDiff || '';
+    document.getElementById('editDifficultySelect').value = difficulty || 'Easy';
     document.getElementById('editPhotoModal').style.display = 'flex';
   }
   document.getElementById('closeEditPhoto').addEventListener('click', () => {
@@ -568,10 +587,12 @@
     const location = document.getElementById('editLocationInput').value.trim();
     const answerName = document.getElementById('editAnswerInput').value.trim();
     const answerDiff = document.getElementById('editDiffInput').value.trim();
+    const difficulty = document.getElementById('editDifficultySelect').value;
     const { error } = await sb.from('photos').update({
       location: location || null,
       answer_name: answerName || null,
-      answer_diff: answerDiff || null
+      answer_diff: answerDiff || null,
+      difficulty: difficulty
     }).eq('id', id);
     if(error){ alert('Save failed: ' + error.message); return; }
     document.getElementById('editPhotoModal').style.display = 'none';
@@ -582,6 +603,7 @@
     const fileInput = document.getElementById('photoFileInput');
     const originalInput = document.getElementById('originalFileInput');
     const maskType = document.getElementById('maskTypeSelect').value;
+    const difficulty = document.getElementById('difficultySelect').value;
     const location = document.getElementById('locationInput').value.trim();
     const answerName = document.getElementById('answerNameInput').value.trim();
     const answerDiff = document.getElementById('answerDiffInput').value.trim();
@@ -606,6 +628,7 @@
       image_path: fileName,
       original_path: originalName,
       mask_type: maskType,
+      difficulty: difficulty,
       location: location || null,
       answer_name: answerName,
       answer_diff: answerDiff,
