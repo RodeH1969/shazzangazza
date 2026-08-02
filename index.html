@@ -866,9 +866,7 @@
       <div class="hattrick-sub">Get <b>3 Open Spottos right</b> &mdash; score a <b>$20 Aldi gift card</b>. <i>(at least 1 of the 3 must be rated Tough or higher)</i></div>
     </div>
   </div>
-  <div class="hattrick-winners" id="hattrickWinners">
-    <span class="hattrick-empty">Nobody&rsquo;s cracked the Hat Trick today&hellip; yet. Could be you!</span>
-  </div>
+  <div class="hattrick-winners" id="hattrickWinners"></div>
 </div>
 
 <div class="grid-wrap">
@@ -976,7 +974,9 @@
   function claimedTimeLabel(iso){
     if(!iso) return '';
     const d = new Date(iso);
-    return d.toLocaleTimeString('en-AU', { hour: 'numeric', minute: '2-digit' });
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    return `${day}/${month}`;
   }
 
   function ticketCard(p, index){
@@ -1102,7 +1102,7 @@
       .eq('win_date', today)
       .order('created_at', { ascending: true });
     if(error || !data || data.length === 0){
-      el.innerHTML = `<span class="hattrick-empty">Nobody&rsquo;s cracked the Hat Trick today&hellip; yet. Could be you!</span>`;
+      el.innerHTML = '';
       return;
     }
     el.innerHTML = data.map(w => `<span class="hattrick-badge">\u{1F3A9} ${w.claimant_name}</span>`).join('');
