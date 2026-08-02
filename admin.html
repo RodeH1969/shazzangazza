@@ -470,26 +470,37 @@
     const { error: e2 } = await sb.from('photos').update({ claimed: true, claimed_at: now, winner_name: claimantName || null }).eq('id', photoId);
     if(e1 || e2){ alert('Something went wrong approving that — try again.'); return; }
 
-    // Hat Trick check: has this mobile number hit 3 approved claims today?
+    // Hat Trick check: has this mobile number hit 3 approved claims today,
+    // with at least one of them rated Tough or Diabolical?
     if(mobileNumber){
       const todayStart = new Date();
       todayStart.setHours(0,0,0,0);
       const { data: todaysApproved } = await sb
         .from('claims')
-        .select('id')
+        .select('id, photo_id')
         .eq('mobile_number', mobileNumber)
         .eq('status', 'approved')
         .gte('created_at', todayStart.toISOString());
       if(todaysApproved && todaysApproved.length >= 3){
-        const today = new Date().toISOString().slice(0,10);
-        const { data: existingWin } = await sb
-          .from('hat_trick_winners')
-          .select('id')
-          .eq('claimant_name', claimantName)
-          .eq('win_date', today);
-        if(!existingWin || existingWin.length === 0){
-          await sb.from('hat_trick_winners').insert({ claimant_name: claimantName, win_date: today });
-          alert(`\u{1F3A9} HAT TRICK! ${claimantName} just hit 3 approved claims today — they've won the $20 Aldi gift card. Text them on ${mobileNumber} to sort it out.`);
+        const photoIds = [...new Set(todaysApproved.map(c => c.photo_id))];
+        const { data: relatedPhotos } = await sb
+          .from('photos')
+          .select('id, difficulty')
+          .in('id', photoIds);
+        const hasToughOrHigher = relatedPhotos && relatedPhotos.some(p => p.difficulty === 'Tough' || p.difficulty === 'Diabolical');
+        if(hasToughOrHigher){
+          const today = new Date().toISOString().slice(0,10);
+          const { data: existingWin } = await sb
+            .from('hat_trick_winners')
+            .select('id')
+            .eq('claimant_name', claimantName)
+            .eq('win_date', today);
+          if(!existingWin || existingWin.length === 0){
+            await sb.from('hat_trick_winners').insert({ claimant_name: claimantName, win_date: today });
+            alert(`\u{1F3A9} HAT TRICK! ${claimantName} just hit 3 approved claims today (including at least one Tough/Diabolical) — they've won the $20 Aldi gift card. Text them on ${mobileNumber} to sort it out.`);
+          }
+        } else {
+          alert(`${claimantName} has hit 3 approved claims today, but none were rated Tough or Diabolical yet — Hat Trick not awarded until one of the three qualifies.`);
         }
       }
     }

@@ -822,7 +822,6 @@
   <div class="stats">
     <div class="stat"><b id="statUnclaimed">&mdash;</b><span>Unclaimed</span></div>
     <div class="stat"><b id="statClaimed">&mdash;</b><span>Claimed</span></div>
-    <div class="stat"><b id="statTotal">&mdash;</b><span>Spottos Today</span></div>
   </div>
 </section>
 
@@ -846,7 +845,7 @@
       <span class="how-num">3</span>
       <div>
         <b>Be the 1st to claim it</b>
-        <span>See how many of today&rsquo;s 10 Spottos you can be the first to claim!</span>
+        <span>See how many Open Spottos you can be the first to claim!</span>
       </div>
     </div>
   </div>
@@ -864,7 +863,7 @@
     <img src="aldi.jpeg" alt="Aldi" class="hattrick-aldi">
     <div class="hattrick-copy">
       <div class="hattrick-title">🎩 THE HAT TRICK CHALLENGE</div>
-      <div class="hattrick-sub">Get <b>3 Spottos right</b> in ONE DAY &mdash; score a <b>$20 Aldi gift card</b>.</div>
+      <div class="hattrick-sub">Get <b>3 Open Spottos right</b> &mdash; score a <b>$20 Aldi gift card</b>. <i>(at least 1 of the 3 must be rated Tough or higher)</i></div>
     </div>
   </div>
   <div class="hattrick-winners" id="hattrickWinners">
@@ -1007,7 +1006,6 @@
     const unclaimedCount = photos.length - claimedCount;
     document.getElementById('statUnclaimed').textContent = unclaimedCount;
     document.getElementById('statClaimed').textContent = claimedCount;
-    document.getElementById('statTotal').textContent = photos.length;
   }
 
   function fmtHMS(ms){
