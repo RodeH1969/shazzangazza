@@ -431,7 +431,6 @@
   }
   .stamp.type-shazza{ background: var(--shazza); color: #2b0a18; }
   .stamp.type-gazza{ background: var(--gazza); color: #08222a; }
-  .stamp.expired{ background: #ff8a1e; color: #2b1600; }
 
   /* perforated divider between photo and stub */
   .perf{
@@ -489,33 +488,6 @@
   .stub .status.open{ color: var(--muted); border:1px solid var(--line-strong); }
   .stub .status.won.type-shazza{ color: var(--shazza); border:1px solid var(--shazza-dim); background: rgba(255,95,150,0.08); }
   .stub .status.won.type-gazza{ color: var(--gazza); border:1px solid var(--gazza-dim); background: rgba(53,201,234,0.08); }
-
-  .fuse{
-    display:flex;
-    flex-direction:column;
-    gap:4px;
-    padding:9px 16px 13px;
-    border-top: 1px solid var(--line);
-    font-family:'JetBrains Mono', monospace;
-    font-size:11px;
-    letter-spacing:0.02em;
-  }
-  .fuse-label{ color: var(--gold); font-weight:600; }
-  .fuse-time{ color: var(--text); font-weight:700; }
-  .fuse-dead{
-    color: var(--shazza);
-    font-weight:700;
-    letter-spacing:0.05em;
-    text-transform:uppercase;
-    animation: fuseDeadFlash 1.4s ease-in-out infinite;
-  }
-  @keyframes fuseDeadFlash{
-    0%, 100%{ opacity:1; }
-    50%{ opacity:0.45; }
-  }
-  @media (prefers-reduced-motion: reduce){
-    .fuse-dead{ animation:none; }
-  }
 
   /* ---------- Modal shell ---------- */
   .overlay{
@@ -989,7 +961,7 @@
           <img src="${p.imageUrl}" alt="" loading="lazy">
           ${!p.claimed ? `<div class="tap-hint">Tap to guess</div>` : ''}
           <div class="mask-badge type-${p.mask_type}" title="${label} is hidden in this photo">${icons[p.mask_type]}</div>
-          ${p.claimed ? `<div class="stamp type-${p.mask_type}">${label} Claimed${timeLabel ? ' &middot; ' + timeLabel : ''}</div>` : `<div id="expired-${p.id}"></div>`}
+          ${p.claimed ? `<div class="stamp type-${p.mask_type}">${label} Claimed${timeLabel ? ' &middot; ' + timeLabel : ''}</div>` : ''}
           ${p.location ? `<div class="location-strip">${p.location}</div>` : ''}
         </div>
         <div class="perf"></div>
@@ -997,7 +969,6 @@
           <span class="ticket-no">Spotto <b>${num}</b>${p.difficulty ? ` <span class="difficulty-badge diff-${p.difficulty.toLowerCase()}">${p.difficulty}</span>` : ''}</span>
           <span class="status ${p.claimed ? 'won type-' + p.mask_type : 'open'}">${p.claimed ? 'CLAIMED' : 'OPEN'}</span>
         </div>
-        <div class="fuse" id="fuse-${p.id}"></div>
       </article>`;
   }
 
@@ -1006,50 +977,6 @@
     const unclaimedCount = photos.length - claimedCount;
     document.getElementById('statUnclaimed').textContent = unclaimedCount;
     document.getElementById('statClaimed').textContent = claimedCount;
-  }
-
-  function fmtHMS(ms){
-    const totalSeconds = Math.max(0, Math.floor(ms / 1000));
-    const h = String(Math.floor(totalSeconds / 3600)).padStart(2, '0');
-    const m = String(Math.floor((totalSeconds % 3600) / 60)).padStart(2, '0');
-    const s = String(totalSeconds % 60).padStart(2, '0');
-    return `${h}:${m}:${s}`;
-  }
-
-  function isExpired(p){
-    return !p.claimed && p.fuseDeadline.getTime() - Date.now() <= 0;
-  }
-
-  let fuseInterval = null;
-  function startFuseTimers(){
-    if(fuseInterval) clearInterval(fuseInterval);
-    function tick(){
-      photos.forEach(p => {
-        const fuseEl = document.getElementById(`fuse-${p.id}`);
-        if(fuseEl){
-          if(p.claimed){
-            fuseEl.innerHTML = '';
-            fuseEl.style.display = 'none';
-          } else {
-            fuseEl.style.display = '';
-            const remaining = p.fuseDeadline.getTime() - Date.now();
-            if(remaining <= 0){
-              fuseEl.innerHTML = `<span class="fuse-dead">\u{1F4A5} TOO LATE &mdash; nobody cracked it in time</span>`;
-            } else {
-              fuseEl.innerHTML = `<span class="fuse-label">\u{1F575}\u{FE0F} Nobody&rsquo;s cracked it yet</span><span class="fuse-time">\u{1F4A3} ${fmtHMS(remaining)} left to claim</span>`;
-            }
-          }
-        }
-        if(!p.claimed){
-          const expiredEl = document.getElementById(`expired-${p.id}`);
-          if(expiredEl){
-            expiredEl.innerHTML = isExpired(p) ? `<div class="stamp expired">\u{1F512} Claim Window Closed</div>` : '';
-          }
-        }
-      });
-    }
-    tick();
-    fuseInterval = setInterval(tick, 1000);
   }
 
   async function loadPhotos(){
@@ -1072,13 +999,11 @@
     photos = (data || []).map((p, i) => ({
       ...p,
       imageUrl: sb.storage.from('photos').getPublicUrl(p.image_path).data.publicUrl,
-      revealUrl: p.original_path ? sb.storage.from('originals').getPublicUrl(p.original_path).data.publicUrl : null,
-      fuseDeadline: new Date(new Date(p.created_at).getTime() + 24 * 60 * 60 * 1000)
+      revealUrl: p.original_path ? sb.storage.from('originals').getPublicUrl(p.original_path).data.publicUrl : null
     }));
 
     grid.innerHTML = photos.map(ticketCard).join('');
     renderStats();
-    startFuseTimers();
     openSpottoFromHash();
   }
 
@@ -1129,7 +1054,7 @@
     lbMeta.textContent = showReveal
       ? `SPOTTO ${currentSpottoNum} \u00B7 REVEALED${diffSuffix}`
       : `SPOTTO ${currentSpottoNum} \u00B7 ${currentPhoto.mask_type.toUpperCase()}${diffSuffix}`;
-    const hideClaim = currentPhoto.claimed || isExpired(currentPhoto);
+    const hideClaim = currentPhoto.claimed;
     document.getElementById('thatsMeBtn').style.display = hideClaim ? 'none' : 'inline-flex';
     document.getElementById('shareBtn').style.flex = hideClaim ? '1' : '';
     const lbLocation = document.getElementById('lbLocation');
