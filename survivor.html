@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Daily Survivor Game</title>
+<link rel="icon" type="image/png" href="logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>
+  :root{
+    --bg: #101219;
+    --surface: #1c2029;
+    --surface-2: #242938;
+    --line: rgba(237,238,241,0.09);
+    --line-strong: rgba(237,238,241,0.16);
+    --text: #edeef1;
+    --muted: #8b90a3;
+    --gold: #f2a93b;
+    --gold-dim: #a87527;
+    --green: #35c96b;
+    --red: #ff5f5f;
+  }
+  *{ box-sizing:border-box; }
+  body{
+    margin:0;
+    background: radial-gradient(ellipse 1200px 600px at 50% -10%, #1a2030 0%, var(--bg) 55%);
+    color: var(--text);
+    font-family:'Inter', system-ui, sans-serif;
+    min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+  }
+  .mono{ font-family:'JetBrains Mono', monospace; }
+  .display{ font-family:'Bebas Neue', sans-serif; letter-spacing:0.02em; }
+
+  header{
+    display:flex; align-items:center; justify-content:center;
+    padding: 22px;
+    border-bottom: 1px solid var(--line);
+  }
+  header img{ height:110px; width:auto; }
+
+  main{ max-width:520px; margin:0 auto; padding: 28px 20px 80px; }
+
+  .card{
+    background: var(--surface);
+    border: 1px solid var(--line-strong);
+    border-radius: 14px;
+    padding: 22px;
+    margin-bottom: 18px;
+  }
+
+  .status-label{
+    font-family:'JetBrains Mono', monospace;
+    font-size:11px;
+    font-weight:700;
+    letter-spacing:0.1em;
+    text-transform:uppercase;
+    color: var(--gold);
+    text-align:center;
+  }
+  .round-title{
+    font-family:'Bebas Neue', sans-serif;
+    font-size:32px;
+    text-align:center;
+    margin-top:4px;
+  }
+  .countdown{
+    font-family:'JetBrains Mono', monospace;
+    font-size:38px;
+    font-weight:700;
+    text-align:center;
+    margin-top:10px;
+    color:#ffffff;
+  }
+  .countdown.urgent{ color: var(--red); animation: pulseUrgent 1s ease-in-out infinite; }
+  @keyframes pulseUrgent{ 0%,100%{opacity:1;} 50%{opacity:0.5;} }
+
+  .sub-note{
+    text-align:center;
+    color: var(--muted);
+    font-size:13px;
+    margin-top:8px;
+  }
+
+  .round-photo{
+    width:100%;
+    aspect-ratio: 4/3;
+    object-fit:cover;
+    border-radius:10px;
+    margin-top:16px;
+    display:block;
+  }
+
+  .field{ margin-top:16px; }
+  .field label{
+    display:block;
+    font-family:'JetBrains Mono', monospace;
+    font-size:11px;
+    font-weight:700;
+    letter-spacing:0.06em;
+    text-transform:uppercase;
+    color:#ffffff;
+    margin-bottom:8px;
+  }
+  input{
+    width:100%;
+    background: var(--bg);
+    border:1px solid var(--line-strong);
+    color: var(--text);
+    border-radius:10px;
+    padding:13px 14px;
+    font-size:14px;
+    font-family:'JetBrains Mono', monospace;
+  }
+  input:focus{ outline:none; border-color: var(--gold-dim); }
+
+  .btn{
+    width:100%;
+    border:none; border-radius:10px;
+    padding:14px 18px;
+    font-weight:700; font-size:15px;
+    cursor:pointer;
+    margin-top:16px;
+    background: linear-gradient(180deg,#ffcf7d,var(--gold));
+    color:#1b1204;
+  }
+  .btn:disabled{ opacity:0.5; cursor:not-allowed; }
+
+  .rules-list{ margin-top:12px; }
+  .rules-list li{ color: var(--muted); font-size:13.5px; line-height:1.6; margin-bottom:6px; }
+
+  .survivor-list{ margin-top:14px; }
+  .survivor-badge{
+    display:inline-block;
+    background: rgba(53,201,107,0.15);
+    border:1px solid var(--green);
+    color: var(--green);
+    font-family:'JetBrains Mono', monospace;
+    font-weight:700;
+    font-size:12px;
+    padding:6px 12px;
+    border-radius:999px;
+    margin:4px 6px 0 0;
+  }
+
+  .reveal-answer{
+    background:#c81e3a;
+    color:#fff;
+    text-align:center;
+    padding:12px;
+    border-radius:10px;
+    font-family:'Bebas Neue', sans-serif;
+    font-size:22px;
+    text-transform:uppercase;
+    margin-top:16px;
+  }
+
+  .toast{
+    position:fixed; bottom:20px; left:50%; transform:translateX(-50%);
+    background: var(--surface-2);
+    border:1px solid var(--green);
+    color: var(--text);
+    padding:12px 20px;
+    border-radius:10px;
+    font-size:13px;
+    opacity:0; pointer-events:none;
+    transition: opacity .2s ease;
+    z-index:100;
+  }
+  .toast.show{ opacity:1; }
+</style>
+</head>
+<body>
+
+<header>
+  <img src="survivor.png" alt="Daily Survivor Game">
+</header>
+
+<main>
+  <div class="card" id="rulesCard">
+    <div class="status-label">How it works</div>
+    <div class="round-title">One masked photo. Every 10 minutes.</div>
+    <ul class="rules-list">
+      <li>A new masked celebrity photo drops every 10 minutes.</li>
+      <li>You've got <b>3 minutes</b> to submit your guess.</li>
+      <li>Results and the correct answer are published <b>9 minutes</b> in.</li>
+      <li>Only correct guessers move on to the next round.</li>
+      <li>Last one standing wins a <b>$40 Aldi gift card</b>.</li>
+      <li>If nobody's left after a round, nobody wins that round.</li>
+    </ul>
+  </div>
+
+  <div class="card" id="gameCard" style="display:none;">
+    <div class="status-label" id="statusLabel">&mdash;</div>
+    <div class="round-title" id="roundTitle">&mdash;</div>
+    <div class="countdown" id="countdown">--:--</div>
+    <div class="sub-note" id="subNote"></div>
+
+    <img class="round-photo" id="roundPhoto" style="display:none;" alt="">
+
+    <div id="entryFormWrap" style="display:none;">
+      <div class="field">
+        <label for="guessInput">Who is it?</label>
+        <input type="text" id="guessInput" placeholder="Full name">
+      </div>
+      <div class="field">
+        <label for="nameInput">Your name</label>
+        <input type="text" id="nameInput" placeholder="First name + surname initial, e.g. Roderick H">
+      </div>
+      <div class="field">
+        <label for="mobileInput">Mobile number</label>
+        <input type="tel" id="mobileInput" placeholder="04XX XXX XXX" inputmode="tel">
+      </div>
+      <button class="btn" id="submitEntryBtn">Submit Guess</button>
+    </div>
+
+    <div id="revealWrap" style="display:none;">
+      <div class="reveal-answer" id="revealAnswer"></div>
+      <div class="survivor-list" id="survivorList"></div>
+    </div>
+  </div>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  const SUPABASE_URL = 'https://fqxjjzzrfkzkebghrqvy.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_aIbOvtjJr4lGryUvze7-lg_OAs3W_gm';
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  const ROUND_LENGTH_MS = 10 * 60 * 1000;
+  const ENTRY_WINDOW_MS = 3 * 60 * 1000;
+  const REVEAL_AT_MS = 9 * 60 * 1000;
+
+  let sessionStart = null;
+  let roundsCache = {};
+  let resultsCache = {};
+  let currentRoundNumber = null;
+  let currentPhase = null; // 'before' | 'open' | 'waiting' | 'revealed' | 'nomore'
+
+  function showToast(msg){
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3000);
+  }
+
+  async function loadSession(){
+    const { data } = await sb.from('survivor_session').select('*').eq('id', 1).single();
+    sessionStart = data && data.start_time ? new Date(data.start_time) : null;
+  }
+
+  async function getRound(num){
+    if(roundsCache[num] !== undefined) return roundsCache[num];
+    const { data } = await sb.from('survivor_rounds').select('*').eq('round_number', num).maybeSingle();
+    roundsCache[num] = data || null;
+    return roundsCache[num];
+  }
+
+  async function getResults(num){
+    if(resultsCache[num] !== undefined) return resultsCache[num];
+    const { data } = await sb.from('survivor_round_results').select('*').eq('round_number', num);
+    resultsCache[num] = data || [];
+    return resultsCache[num];
+  }
+
+  function fmtCountdown(ms){
+    const total = Math.max(0, Math.floor(ms / 1000));
+    const m = String(Math.floor(total / 60)).padStart(2,'0');
+    const s = String(total % 60).padStart(2,'0');
+    return `${m}:${s}`;
+  }
+
+  async function tick(){
+    if(!sessionStart){
+      document.getElementById('rulesCard').style.display = 'block';
+      document.getElementById('gameCard').style.display = 'none';
+      return;
+    }
+    const now = Date.now();
+    const startMs = sessionStart.getTime();
+
+    if(now < startMs){
+      document.getElementById('rulesCard').style.display = 'block';
+      document.getElementById('gameCard').style.display = 'block';
+      document.getElementById('statusLabel').textContent = 'GAME STARTS IN';
+      document.getElementById('roundTitle').textContent = 'Get Ready';
+      document.getElementById('countdown').textContent = fmtCountdown(startMs - now);
+      document.getElementById('countdown').classList.remove('urgent');
+      document.getElementById('subNote').textContent = 'Round 1 drops the moment the clock hits zero.';
+      document.getElementById('roundPhoto').style.display = 'none';
+      document.getElementById('entryFormWrap').style.display = 'none';
+      document.getElementById('revealWrap').style.display = 'none';
+      return;
+    }
+
+    document.getElementById('rulesCard').style.display = 'none';
+
+    const elapsed = now - startMs;
+    const roundNum = Math.floor(elapsed / ROUND_LENGTH_MS) + 1;
+    const intoRound = elapsed % ROUND_LENGTH_MS;
+
+    const round = await getRound(roundNum);
+
+    document.getElementById('gameCard').style.display = 'block';
+
+    if(!round){
+      document.getElementById('statusLabel').textContent = 'GAME OVER';
+      document.getElementById('roundTitle').textContent = 'That\u2019s a wrap';
+      document.getElementById('countdown').textContent = '';
+      document.getElementById('subNote').textContent = 'No more rounds loaded \u2014 check the last result above for how it ended.';
+      document.getElementById('roundPhoto').style.display = 'none';
+      document.getElementById('entryFormWrap').style.display = 'none';
+      document.getElementById('revealWrap').style.display = 'block';
+      const prevResults = await getResults(roundNum - 1);
+      renderReveal(roundNum - 1, prevResults, true);
+      return;
+    }
+
+    currentRoundNumber = roundNum;
+    document.getElementById('roundTitle').textContent = `Round ${roundNum}`;
+
+    if(intoRound < ENTRY_WINDOW_MS){
+      currentPhase = 'open';
+      document.getElementById('statusLabel').textContent = 'ENTRIES OPEN';
+      const remaining = ENTRY_WINDOW_MS - intoRound;
+      document.getElementById('countdown').textContent = fmtCountdown(remaining);
+      document.getElementById('countdown').classList.toggle('urgent', remaining < 30000);
+      document.getElementById('subNote').textContent = 'Get your guess in before the clock runs out.';
+      const imgUrl = sb.storage.from('survivor-photos').getPublicUrl(round.image_path).data.publicUrl;
+      const photoEl = document.getElementById('roundPhoto');
+      photoEl.src = imgUrl;
+      photoEl.style.display = 'block';
+      document.getElementById('entryFormWrap').style.display = 'block';
+      document.getElementById('revealWrap').style.display = 'none';
+    } else if(intoRound < REVEAL_AT_MS){
+      currentPhase = 'waiting';
+      document.getElementById('statusLabel').textContent = 'ENTRIES CLOSED';
+      document.getElementById('countdown').textContent = fmtCountdown(REVEAL_AT_MS - intoRound);
+      document.getElementById('countdown').classList.remove('urgent');
+      document.getElementById('subNote').textContent = 'Results are being judged \u2014 hang tight.';
+      document.getElementById('roundPhoto').style.display = 'block';
+      document.getElementById('entryFormWrap').style.display = 'none';
+      document.getElementById('revealWrap').style.display = 'none';
+    } else {
+      currentPhase = 'revealed';
+      document.getElementById('statusLabel').textContent = 'RESULTS';
+      const nextIn = ROUND_LENGTH_MS - intoRound;
+      document.getElementById('countdown').textContent = fmtCountdown(nextIn);
+      document.getElementById('countdown').classList.remove('urgent');
+      document.getElementById('subNote').textContent = 'Next round drops in\u2026';
+      document.getElementById('roundPhoto').style.display = 'block';
+      document.getElementById('entryFormWrap').style.display = 'none';
+      document.getElementById('revealWrap').style.display = 'block';
+      if(round.revealed){
+        const results = await getResults(roundNum);
+        renderReveal(roundNum, results, false);
+      } else {
+        document.getElementById('revealAnswer').textContent = 'Still being judged\u2026 check back shortly.';
+        document.getElementById('survivorList').innerHTML = '';
+      }
+    }
+  }
+
+  function renderReveal(roundNum, results, isFinal){
+    const round = roundsCache[roundNum];
+    const answerEl = document.getElementById('revealAnswer');
+    answerEl.textContent = round ? round.answer_name : '';
+    const listEl = document.getElementById('survivorList');
+    if(!results || results.length === 0){
+      listEl.innerHTML = `<p class="sub-note">${isFinal ? 'Nobody survived that round \u2014 no winner this time.' : 'Nobody got it \u2014 the game ends here.'}</p>`;
+    } else if(results.length === 1){
+      listEl.innerHTML = `<p class="sub-note" style="color:var(--gold); font-weight:700;">\u{1F3C6} ${results[0].claimant_name} is the last one standing \u2014 winner!</p>`;
+    } else {
+      listEl.innerHTML = `<p class="sub-note">Still in the game:</p>` + results.map(r => `<span class="survivor-badge">${r.claimant_name}</span>`).join('');
+    }
+  }
+
+  document.getElementById('submitEntryBtn').addEventListener('click', async () => {
+    const guess = document.getElementById('guessInput').value.trim();
+    const name = document.getElementById('nameInput').value.trim();
+    const mobile = document.getElementById('mobileInput').value.trim();
+    if(!guess){ showToast('Type in your guess.'); return; }
+    if(!name){ showToast('Pop in your name.'); return; }
+    if(!mobile){ showToast('Pop in your mobile.'); return; }
+
+    const btn = document.getElementById('submitEntryBtn');
+    btn.disabled = true;
+    btn.textContent = 'Sending\u2026';
+
+    const { error } = await sb.from('survivor_entries').insert({
+      round_number: currentRoundNumber,
+      claimant_name: name,
+      mobile_number: mobile,
+      guess: guess
+    });
+
+    if(error){
+      showToast('Something went wrong \u2014 try again.');
+      btn.disabled = false;
+      btn.textContent = 'Submit Guess';
+      return;
+    }
+
+    localStorage.setItem('survivorMobile', mobile);
+    localStorage.setItem('survivorName', name);
+    showToast('Guess submitted \u2014 good luck!');
+    btn.textContent = 'Submitted \u2713';
+  });
+
+  window.addEventListener('DOMContentLoaded', () => {
+    const savedMobile = localStorage.getItem('survivorMobile');
+    const savedName = localStorage.getItem('survivorName');
+    if(savedMobile) document.getElementById('mobileInput').value = savedMobile;
+    if(savedName) document.getElementById('nameInput').value = savedName;
+  });
+
+  loadSession().then(() => {
+    tick();
+    setInterval(async () => {
+      await loadSession();
+      tick();
+    }, 1000);
+  });
+</script>
+</body>
+</html>

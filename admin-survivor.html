@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Survivor Game — Admin</title>
+<link rel="icon" type="image/png" href="logo.png">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>
+  :root{
+    --bg: #101219; --surface: #1c2029; --surface-2: #242938;
+    --line: rgba(237,238,241,0.09); --line-strong: rgba(237,238,241,0.16);
+    --text: #edeef1; --muted: #8b90a3;
+    --gold: #f2a93b; --gold-dim: #a87527;
+    --green: #35c96b; --red: #ff5f5f;
+  }
+  *{ box-sizing:border-box; }
+  body{ margin:0; background:var(--bg); color:var(--text); font-family:'Inter', system-ui, sans-serif; min-height:100vh; }
+  .display{ font-family:'Bebas Neue', sans-serif; letter-spacing:0.02em; }
+  .mono{ font-family:'JetBrains Mono', monospace; }
+
+  #loginScreen{ min-height:100vh; display:flex; align-items:center; justify-content:center; padding:20px; }
+  .login-card{ width:100%; max-width:360px; background:var(--surface); border:1px solid var(--line-strong); border-radius:12px; padding:28px; }
+  .login-card h1{ font-family:'Bebas Neue', sans-serif; font-size:30px; color:var(--gold); }
+  .field{ margin-top:18px; }
+  .field label{ display:block; font-family:'JetBrains Mono', monospace; font-size:11px; letter-spacing:0.06em; text-transform:uppercase; color:var(--muted); margin-bottom:7px; }
+  input, select{ width:100%; background:var(--bg); border:1px solid var(--line-strong); color:var(--text); border-radius:8px; padding:11px 13px; font-size:14px; font-family:inherit; }
+  input:focus, select:focus{ outline:none; border-color:var(--gold-dim); }
+  .btn{ border:none; border-radius:8px; padding:12px 18px; font-weight:700; font-size:14px; cursor:pointer; }
+  .btn-primary{ background:linear-gradient(180deg,#ffcf7d,var(--gold)); color:#1b1204; }
+  .btn-secondary{ background:var(--surface-2); border:1px solid var(--line-strong); color:var(--text); }
+  .btn-danger{ background:rgba(255,95,95,0.12); border:1px solid var(--red); color:var(--red); }
+  .btn-full{ width:100%; margin-top:22px; }
+  .error-msg{ color:var(--red); font-size:13px; margin-top:14px; display:none; }
+
+  #app{ display:none; }
+  header{ display:flex; align-items:center; justify-content:space-between; padding:16px 24px; border-bottom:1px solid var(--line); }
+  header h1{ font-family:'Bebas Neue', sans-serif; font-size:24px; color:var(--gold); }
+  main{ max-width:900px; margin:0 auto; padding:24px 20px 80px; }
+
+  .card{ background:var(--surface); border:1px solid var(--line-strong); border-radius:12px; padding:18px; margin-bottom:16px; }
+  .card h3{ font-family:'Bebas Neue', sans-serif; font-size:20px; color:var(--gold); margin-bottom:14px; }
+
+  .row-flex{ display:flex; gap:12px; flex-wrap:wrap; align-items:flex-end; }
+  .row-flex .field{ margin-top:0; flex:1; min-width:150px; }
+
+  .round-card{ background:var(--surface-2); border:1px solid var(--line-strong); border-radius:10px; padding:14px; margin-bottom:10px; }
+  .round-card img{ width:100%; max-width:200px; border-radius:8px; display:block; margin-bottom:10px; }
+  .round-meta{ font-size:12.5px; color:var(--muted); margin-bottom:4px; }
+  .round-meta b{ color:var(--text); }
+
+  .entry-row{ display:flex; justify-content:space-between; align-items:center; gap:10px; padding:10px; border-bottom:1px solid var(--line); flex-wrap:wrap; }
+  .entry-row:last-child{ border-bottom:none; }
+  .entry-info{ font-size:13px; }
+  .entry-info b{ color:#fff; }
+  .eligible-tag{ font-family:'JetBrains Mono', monospace; font-size:10.5px; padding:3px 8px; border-radius:999px; margin-left:6px; }
+  .eligible-yes{ background:rgba(53,201,107,0.15); color:var(--green); border:1px solid var(--green); }
+  .eligible-no{ background:rgba(255,95,95,0.15); color:var(--red); border:1px solid var(--red); }
+  .eligible-na{ background:var(--surface); color:var(--muted); border:1px solid var(--line-strong); }
+  .entry-actions{ display:flex; gap:6px; }
+  .entry-actions button{ font-size:12px; padding:7px 12px; }
+
+  .empty-note{ color:var(--muted); font-size:13px; text-align:center; padding:20px 0; }
+</style>
+</head>
+<body>
+
+<div id="loginScreen">
+  <div class="login-card">
+    <h1>SURVIVOR ADMIN</h1>
+    <div class="field">
+      <label for="emailInput">Email</label>
+      <input type="email" id="emailInput" autocomplete="username">
+    </div>
+    <div class="field">
+      <label for="passInput">Password</label>
+      <input type="password" id="passInput" autocomplete="current-password">
+    </div>
+    <button class="btn btn-primary btn-full" id="loginBtn">Log In</button>
+    <p class="error-msg" id="loginError">Wrong email or password.</p>
+  </div>
+</div>
+
+<div id="app">
+  <header>
+    <h1>DAILY SURVIVOR — ADMIN</h1>
+    <button class="btn btn-secondary" id="logoutBtn">Log Out</button>
+  </header>
+  <main>
+
+    <div class="card">
+      <h3>Game Start Time</h3>
+      <div class="row-flex">
+        <div class="field">
+          <label for="startTimeInput">Start date &amp; time</label>
+          <input type="datetime-local" id="startTimeInput">
+        </div>
+        <button class="btn btn-primary" id="saveStartBtn">Save Start Time</button>
+      </div>
+      <p style="color:var(--muted); font-size:12px; margin-top:10px;">Round 1 opens the instant this time hits. Text your players the link + this time beforehand.</p>
+    </div>
+
+    <div class="card">
+      <h3>Add Next Round</h3>
+      <p style="color:var(--muted); font-size:12px; margin-bottom:14px;">Rounds are numbered automatically in the order you add them.</p>
+      <div class="row-flex">
+        <div class="field">
+          <label for="roundFileInput">Public photo</label>
+          <input type="file" id="roundFileInput" accept="image/*">
+        </div>
+        <div class="field">
+          <label for="roundOriginalInput">Original (unmasked)</label>
+          <input type="file" id="roundOriginalInput" accept="image/*">
+        </div>
+        <div class="field" style="max-width:140px;">
+          <label for="roundMaskSelect">Hidden face</label>
+          <select id="roundMaskSelect">
+            <option value="shazza">Shazza</option>
+            <option value="gazza">Gazza</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="roundAnswerInput">Correct answer</label>
+          <input type="text" id="roundAnswerInput" placeholder="e.g. Michael Klim">
+        </div>
+        <button class="btn btn-primary" id="addRoundBtn">Add Round</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Rounds &amp; Entries</h3>
+      <div id="roundsList"><p class="empty-note">Loading rounds&hellip;</p></div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+  const SUPABASE_URL = 'https://fqxjjzzrfkzkebghrqvy.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_aIbOvtjJr4lGryUvze7-lg_OAs3W_gm';
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  const loginScreen = document.getElementById('loginScreen');
+  const app = document.getElementById('app');
+  const loginError = document.getElementById('loginError');
+
+  document.getElementById('loginBtn').addEventListener('click', async () => {
+    loginError.style.display = 'none';
+    const email = document.getElementById('emailInput').value.trim();
+    const password = document.getElementById('passInput').value;
+    const { error } = await sb.auth.signInWithPassword({ email, password });
+    if(error){ loginError.style.display = 'block'; return; }
+    showApp();
+  });
+  document.getElementById('logoutBtn').addEventListener('click', async () => {
+    await sb.auth.signOut();
+    location.reload();
+  });
+  async function showApp(){
+    loginScreen.style.display = 'none';
+    app.style.display = 'block';
+    loadStartTime();
+    loadRounds();
+  }
+  sb.auth.getSession().then(({ data }) => { if(data.session) showApp(); });
+
+  // ---- Start time ----
+  async function loadStartTime(){
+    const { data } = await sb.from('survivor_session').select('*').eq('id', 1).single();
+    if(data && data.start_time){
+      const d = new Date(data.start_time);
+      const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0,16);
+      document.getElementById('startTimeInput').value = local;
+    }
+  }
+  document.getElementById('saveStartBtn').addEventListener('click', async () => {
+    const val = document.getElementById('startTimeInput').value;
+    if(!val){ alert('Pick a date and time first.'); return; }
+    const iso = new Date(val).toISOString();
+    const { error } = await sb.from('survivor_session').update({ start_time: iso, updated_at: new Date().toISOString() }).eq('id', 1);
+    if(error){ alert('Failed to save: ' + error.message); return; }
+    alert('Start time saved. Now go text your players!');
+  });
+
+  // ---- Add round ----
+  document.getElementById('addRoundBtn').addEventListener('click', async () => {
+    const fileInput = document.getElementById('roundFileInput');
+    const originalInput = document.getElementById('roundOriginalInput');
+    const maskType = document.getElementById('roundMaskSelect').value;
+    const answerName = document.getElementById('roundAnswerInput').value.trim();
+    const file = fileInput.files[0];
+    const originalFile = originalInput.files[0];
+    if(!file || !originalFile){ alert('Choose both the public photo and the original.'); return; }
+    if(!answerName){ alert('Enter the correct answer.'); return; }
+
+    const { data: existingRounds } = await sb.from('survivor_rounds').select('round_number').order('round_number', { ascending: false }).limit(1);
+    const nextRoundNumber = existingRounds && existingRounds.length ? existingRounds[0].round_number + 1 : 1;
+
+    const stamp = `${Date.now()}-${Math.random().toString(36).slice(2,8)}`;
+    const fileName = `round-${stamp}.jpg`;
+    const originalName = `original-${stamp}.jpg`;
+
+    const { error: e1 } = await sb.storage.from('survivor-photos').upload(fileName, file);
+    if(e1){ alert('Photo upload failed: ' + e1.message); return; }
+    const { error: e2 } = await sb.storage.from('survivor-originals').upload(originalName, originalFile);
+    if(e2){ alert('Original upload failed: ' + e2.message); return; }
+
+    const { error: e3 } = await sb.from('survivor_rounds').insert({
+      round_number: nextRoundNumber,
+      image_path: fileName,
+      original_path: originalName,
+      mask_type: maskType,
+      answer_name: answerName,
+      revealed: false
+    });
+    if(e3){ alert('Saving round failed: ' + e3.message); return; }
+
+    fileInput.value = '';
+    originalInput.value = '';
+    document.getElementById('roundAnswerInput').value = '';
+    alert(`Round ${nextRoundNumber} added.`);
+    loadRounds();
+  });
+
+  // ---- Rounds + entries ----
+  async function loadRounds(){
+    const listEl = document.getElementById('roundsList');
+    const { data: rounds, error } = await sb.from('survivor_rounds').select('*').order('round_number', { ascending: true });
+    if(error){ listEl.innerHTML = `<p class="empty-note">Couldn't load rounds: ${error.message}</p>`; return; }
+    if(!rounds.length){ listEl.innerHTML = `<p class="empty-note">No rounds added yet.</p>`; return; }
+
+    listEl.innerHTML = '';
+    for(const round of rounds){
+      const url = sb.storage.from('survivor-photos').getPublicUrl(round.image_path).data.publicUrl;
+      const { data: entries } = await sb.from('survivor_entries').select('*').eq('round_number', round.round_number).order('submitted_at', { ascending: true });
+
+      let prevCorrectMobiles = null;
+      if(round.round_number > 1){
+        const { data: prevEntries } = await sb.from('survivor_entries').select('mobile_number').eq('round_number', round.round_number - 1).eq('correct', true);
+        prevCorrectMobiles = new Set((prevEntries || []).map(e => e.mobile_number));
+      }
+
+      const card = document.createElement('div');
+      card.className = 'round-card';
+      const entriesHtml = (entries && entries.length)
+        ? entries.map(e => {
+            let eligTag = `<span class="eligible-tag eligible-na">Round 1</span>`;
+            if(prevCorrectMobiles){
+              const eligible = prevCorrectMobiles.has(e.mobile_number);
+              eligTag = eligible
+                ? `<span class="eligible-tag eligible-yes">Survived last round</span>`
+                : `<span class="eligible-tag eligible-no">Wasn't in last round</span>`;
+            }
+            return `
+              <div class="entry-row">
+                <div class="entry-info">
+                  <b>${e.claimant_name}</b> guessed <b>${e.guess}</b> ${eligTag}
+                  <div style="color:var(--muted); margin-top:2px;">${e.mobile_number} &middot; ${new Date(e.submitted_at).toLocaleTimeString('en-AU',{hour:'numeric',minute:'2-digit'})} &middot; ${e.correct === true ? 'Marked correct' : e.correct === false ? 'Marked wrong' : 'Not judged yet'}</div>
+                </div>
+                <div class="entry-actions">
+                  <button class="btn btn-secondary mark-btn" data-id="${e.id}" data-correct="true">Correct</button>
+                  <button class="btn btn-danger mark-btn" data-id="${e.id}" data-correct="false">Wrong</button>
+                </div>
+              </div>`;
+          }).join('')
+        : `<p class="empty-note">No entries yet.</p>`;
+
+      card.innerHTML = `
+        <img src="${url}" alt="">
+        <div class="round-meta">Round <b>${round.round_number}</b> &middot; ${round.mask_type} &middot; Answer: <b>${round.answer_name}</b> &middot; ${round.revealed ? '<b style="color:var(--green);">Published</b>' : 'Not published yet'}</div>
+        <div style="margin-top:10px;">${entriesHtml}</div>
+        <div style="margin-top:12px; display:flex; gap:8px;">
+          <button class="btn btn-primary publish-btn" data-round="${round.round_number}" ${round.revealed ? 'disabled' : ''} style="flex:1;">${round.revealed ? 'Already Published' : 'Publish Round Results'}</button>
+        </div>
+      `;
+      listEl.appendChild(card);
+    }
+
+    listEl.querySelectorAll('.mark-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const isCorrect = btn.dataset.correct === 'true';
+        await sb.from('survivor_entries').update({ correct: isCorrect }).eq('id', btn.dataset.id);
+        loadRounds();
+      });
+    });
+    listEl.querySelectorAll('.publish-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const roundNum = parseInt(btn.dataset.round, 10);
+        if(!confirm(`Publish results for Round ${roundNum}? This reveals the answer and survivor list on the public page — can't be undone.`)) return;
+
+        const { data: correctEntries } = await sb.from('survivor_entries').select('claimant_name').eq('round_number', roundNum).eq('correct', true);
+        if(correctEntries && correctEntries.length){
+          const rows = correctEntries.map(e => ({ round_number: roundNum, claimant_name: e.claimant_name }));
+          await sb.from('survivor_round_results').insert(rows);
+        }
+        await sb.from('survivor_rounds').update({ revealed: true }).eq('round_number', roundNum);
+        alert(`Round ${roundNum} published.`);
+        loadRounds();
+      });
+    });
+  }
+</script>
+</body>
+</html>
