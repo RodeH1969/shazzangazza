@@ -207,6 +207,10 @@
         <input type="text" id="guessInput" placeholder="Full name">
       </div>
       <div class="field">
+        <label for="diffGuessInput">Spot 1 thing that doesn&rsquo;t look right</label>
+        <input type="text" id="diffGuessInput" placeholder="What's off in this photo&hellip;">
+      </div>
+      <div class="field">
         <label for="nameInput">Your name</label>
         <input type="text" id="nameInput" placeholder="First name + surname initial, e.g. Roderick H">
       </div>
@@ -368,7 +372,11 @@
   function renderReveal(roundNum, results, isFinal){
     const round = roundsCache[roundNum];
     const answerEl = document.getElementById('revealAnswer');
-    answerEl.textContent = round ? round.answer_name : '';
+    if(round){
+      answerEl.innerHTML = `${round.answer_name}${round.answer_diff ? `<div style="font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:600; text-transform:none; margin-top:4px;">\u{1F50D} What was wrong: ${round.answer_diff}</div>` : ''}`;
+    } else {
+      answerEl.textContent = '';
+    }
     const listEl = document.getElementById('survivorList');
     if(!results || results.length === 0){
       listEl.innerHTML = `<p class="sub-note">${isFinal ? 'Nobody survived that round \u2014 no winner this time.' : 'Nobody got it \u2014 the game ends here.'}</p>`;
@@ -381,9 +389,11 @@
 
   document.getElementById('submitEntryBtn').addEventListener('click', async () => {
     const guess = document.getElementById('guessInput').value.trim();
+    const diffGuess = document.getElementById('diffGuessInput').value.trim();
     const name = document.getElementById('nameInput').value.trim();
     const mobile = document.getElementById('mobileInput').value.trim();
     if(!guess){ showToast('Type in your guess.'); return; }
+    if(!diffGuess){ showToast('Spot the thing that doesn\'t look right too.'); return; }
     if(!name){ showToast('Pop in your name.'); return; }
     if(!mobile){ showToast('Pop in your mobile.'); return; }
 
@@ -395,7 +405,8 @@
       round_number: currentRoundNumber,
       claimant_name: name,
       mobile_number: mobile,
-      guess: guess
+      guess: guess,
+      diff_guess: diffGuess
     });
 
     if(error){

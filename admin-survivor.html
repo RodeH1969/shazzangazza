@@ -124,6 +124,10 @@
           <label for="roundAnswerInput">Correct answer</label>
           <input type="text" id="roundAnswerInput" placeholder="e.g. Michael Klim">
         </div>
+        <div class="field">
+          <label for="roundDiffInput">What's wrong (the edit)</label>
+          <input type="text" id="roundDiffInput" placeholder="e.g. added a UFO in the sky">
+        </div>
         <button class="btn btn-primary" id="addRoundBtn">Add Round</button>
       </div>
     </div>
@@ -189,10 +193,12 @@
     const originalInput = document.getElementById('roundOriginalInput');
     const maskType = document.getElementById('roundMaskSelect').value;
     const answerName = document.getElementById('roundAnswerInput').value.trim();
+    const answerDiff = document.getElementById('roundDiffInput').value.trim();
     const file = fileInput.files[0];
     const originalFile = originalInput.files[0];
     if(!file || !originalFile){ alert('Choose both the public photo and the original.'); return; }
     if(!answerName){ alert('Enter the correct answer.'); return; }
+    if(!answerDiff){ alert('Enter what\'s wrong (the edit) for this round.'); return; }
 
     const { data: existingRounds } = await sb.from('survivor_rounds').select('round_number').order('round_number', { ascending: false }).limit(1);
     const nextRoundNumber = existingRounds && existingRounds.length ? existingRounds[0].round_number + 1 : 1;
@@ -212,6 +218,7 @@
       original_path: originalName,
       mask_type: maskType,
       answer_name: answerName,
+      answer_diff: answerDiff,
       revealed: false
     });
     if(e3){ alert('Saving round failed: ' + e3.message); return; }
@@ -219,6 +226,7 @@
     fileInput.value = '';
     originalInput.value = '';
     document.getElementById('roundAnswerInput').value = '';
+    document.getElementById('roundDiffInput').value = '';
     alert(`Round ${nextRoundNumber} added.`);
     loadRounds();
   });
@@ -256,6 +264,7 @@
               <div class="entry-row">
                 <div class="entry-info">
                   <b>${e.claimant_name}</b> guessed <b>${e.guess}</b> ${eligTag}
+                  <div style="color:var(--muted); margin-top:2px;">What's wrong: <b style="color:var(--text);">${e.diff_guess || '(no answer given)'}</b></div>
                   <div style="color:var(--muted); margin-top:2px;">${e.mobile_number} &middot; ${new Date(e.submitted_at).toLocaleTimeString('en-AU',{hour:'numeric',minute:'2-digit'})} &middot; ${e.correct === true ? 'Marked correct' : e.correct === false ? 'Marked wrong' : 'Not judged yet'}</div>
                 </div>
                 <div class="entry-actions">
@@ -268,7 +277,7 @@
 
       card.innerHTML = `
         <img src="${url}" alt="">
-        <div class="round-meta">Round <b>${round.round_number}</b> &middot; ${round.mask_type} &middot; Answer: <b>${round.answer_name}</b> &middot; ${round.revealed ? '<b style="color:var(--green);">Published</b>' : 'Not published yet'}</div>
+        <div class="round-meta">Round <b>${round.round_number}</b> &middot; ${round.mask_type} &middot; Answer: <b>${round.answer_name}</b> &middot; What's wrong: <b>${round.answer_diff || '(not set)'}</b> &middot; ${round.revealed ? '<b style="color:var(--green);">Published</b>' : 'Not published yet'}</div>
         <div style="margin-top:10px;">${entriesHtml}</div>
         <div style="margin-top:12px; display:flex; gap:8px;">
           <button class="btn btn-primary publish-btn" data-round="${round.round_number}" ${round.revealed ? 'disabled' : ''} style="flex:1;">${round.revealed ? 'Already Published' : 'Publish Round Results'}</button>
